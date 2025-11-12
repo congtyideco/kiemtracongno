@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        /* CSS được giữ nguyên */
+        /* ... (CSS được giữ nguyên) ... */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -63,7 +63,7 @@
             gap: 10px;
         }
         
-        .help-btn, .delete-btn, .update-all-btn, .schedule-btn {
+        .help-btn, .delete-btn, .update-all-btn {
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
@@ -74,7 +74,7 @@
             transition: all 0.3s;
         }
         
-        .help-btn:hover, .delete-btn:hover, .update-all-btn:hover, .schedule-btn:hover {
+        .help-btn:hover, .delete-btn:hover, .update-all-btn:hover {
             background: rgba(255,255,255,0.3);
         }
         
@@ -418,7 +418,7 @@
             color: white;
         }
 
-        /* Schedule Popup Styles (Đã thay đổi kích thước) */
+        /* Schedule Popup Styles */
         .schedule-popup-overlay {
             display: none;
             position: fixed;
@@ -434,14 +434,13 @@
         
         .schedule-popup-content {
             background: white;
-            /* Kích thước theo yêu cầu: 1300px x 800px */
-            width: 1300px;
-            height: 800px; 
+            width: 95%;
+            height: 90%;
             border-radius: 15px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            overflow: hidden;
         }
         
         .schedule-popup-header {
@@ -469,6 +468,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
+            max-height: calc(100% - 140px);
         }
         
         .schedule-section {
@@ -491,7 +491,7 @@
         }
         
         .schedule-table-container {
-            overflow-y: auto; /* Thêm thanh cuộn cho từng bảng */
+            overflow-y: auto;
             flex: 1;
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -556,6 +556,74 @@
             box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
         }
         
+        .scheduler-config {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px dashed #bdc3c7;
+            margin-top: 20px;
+            grid-column: 1 / -1;
+        }
+        
+        .time-input {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .day-checkbox {
+            margin: 10px 5px;
+        }
+        
+        .config-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .save-schedule-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-schedule-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .close-schedule-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .next-schedule {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        
+        .next-schedule h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        
         .summary-info {
             background: #e8f4fd;
             border: 1px solid #b3d9f7;
@@ -563,14 +631,6 @@
             border-radius: 5px;
             margin-bottom: 15px;
             font-weight: 500;
-            flex-shrink: 0;
-        }
-        
-        @media (max-width: 1350px) {
-            .schedule-popup-content {
-                width: 95%; 
-                height: 90%;
-            }
         }
         
         @media (max-width: 1024px) {
@@ -615,7 +675,6 @@
             }
         }
 
-        /* Scrollbar styles cho bảng */
         .schedule-table-container::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -645,7 +704,7 @@
                 <button class="update-all-btn" id="update-all-btn">🔄 Cập nhật tất cả</button>
                 <button class="delete-btn" id="delete-btn">🗑️ Xóa dữ liệu</button>
                 <button class="help-btn" id="help-btn">❓ Hướng dẫn</button>
-                <button class="schedule-btn" id="report-btn">🔔 Báo cáo</button>
+                <button class="help-btn" id="schedule-btn">⏰ Lịch trình</button>
             </div>
         </div>
         
@@ -762,11 +821,11 @@
         </div>
     </div>
 
-    <div class="schedule-popup-overlay" id="report-popup">
+    <div class="schedule-popup-overlay" id="schedule-popup">
         <div class="schedule-popup-content">
             <div class="schedule-popup-header">
                 <h2>⏰ BÁO CÁO CÔNG NỢ HÀNG NGÀY</h2>
-                <button class="close-btn" id="close-report-popup">×</button>
+                <button class="close-btn" id="close-schedule-popup">×</button>
             </div>
             <div class="schedule-popup-body">
                 <div class="schedule-section">
@@ -786,6 +845,43 @@
                     </div>
                     <div class="schedule-table-container">
                         <div id="schedule-non-drugs-table"></div>
+                    </div>
+                </div>
+                
+                <div class="scheduler-config">
+                    <h4>⚙️ CÀI ĐẶT LỊCH TRÌNH TỰ ĐỘNG</h4>
+                    <div>
+                        <label><input type="checkbox" class="day-checkbox" data-day="1"> Thứ 2</label>
+                        <input type="time" class="time-input" data-day="1" value="08:30">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="2"> Thứ 3</label>
+                        <input type="time" class="time-input" data-day="2" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="3"> Thứ 4</label>
+                        <input type="time" class="time-input" data-day="3" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="4"> Thứ 5</label>
+                        <input type="time" class="time-input" data-day="4" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="5"> Thứ 6</label>
+                        <input type="time" class="time-input" data-day="5" value="08:30">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="6"> Thứ 7</label>
+                        <input type="time" class="time-input" data-day="6" value="08:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="0"> Chủ nhật</label>
+                        <input type="time" class="time-input" data-day="0" value="09:00">
+                    </div>
+                    
+                    <div class="config-buttons">
+                        <button class="save-schedule-btn" id="save-schedule">💾 Lưu Lịch trình</button>
+                        <button class="test-schedule-btn" id="test-schedule">🧪 Kiểm tra Ngay</button>
+                        <button class="close-schedule-btn" id="disable-schedule">🚫 Tắt Tự động</button>
+                    </div>
+                    
+                    <div class="next-schedule">
+                        <h4>📅 LỊCH TRÌNH KẾ TIẾP:</h4>
+                        <div id="next-schedule-info">Đang tính toán...</div>
                     </div>
                 </div>
             </div>
@@ -823,18 +919,19 @@
         let overdueDrugs = [];
         let overdueNonDrugs = [];
         
-        // === CẤU HÌNH POPUP TỰ ĐỘNG - ĐƠN GIẢN HÓA ===
-        const autoPopupConfig = {
-            // Thêm Chủ nhật (0) để đảm bảo kiểm tra hoạt động trên mọi ngày
-            targetWeekdays: [0, 1, 2, 3, 4, 5, 6], 
-            openTimes: [
-                {hour: 9, minute: 11}, // <-- Đặt giờ phút TEST mới (ví dụ 9:10 AM)
-                {hour: 16, minute: 30}
-            ],
+        // Biến cho lịch trình (Đã cập nhật mặc định)
+        let scheduleSettings = {
+            enabled: true,
+            monday: { enabled: true, time: "08:30" }, // data-day="1"
+            tuesday: { enabled: true, time: "09:00" }, // data-day="2"
+            wednesday: { enabled: true, time: "09:00" }, // data-day="3"
+            thursday: { enabled: true, time: "09:00" }, // data-day="4"
+            friday: { enabled: true, time: "08:30" }, // data-day="5"
+            saturday: { enabled: true, time: "08:00" }, // data-day="6"
+            sunday: { enabled: true, time: "09:00" } // data-day="0"
         };
-        // ===========================================
 
-        let popupCheckInterval = null; 
+        let scheduleCheckInterval = null;
         
         // Định nghĩa các chỉ số cột toàn cục (dựa trên file gốc)
         const invoiceIndex = 3;
@@ -854,12 +951,15 @@
             const helpBtn = document.getElementById('help-btn');
             const deleteBtn = document.getElementById('delete-btn');
             const updateAllBtn = document.getElementById('update-all-btn');
-            const reportBtn = document.getElementById('report-btn'); // Nút kích hoạt popup báo cáo
+            const scheduleBtn = document.getElementById('schedule-btn');
             const helpPopup = document.getElementById('help-popup');
             const closePopup = document.getElementById('close-popup');
-            const reportPopup = document.getElementById('report-popup'); // Popup báo cáo
-            const closeReportPopup = document.getElementById('close-report-popup');
+            const schedulePopup = document.getElementById('schedule-popup');
+            const closeSchedulePopup = document.getElementById('close-schedule-popup');
             const readConfirmBtn = document.getElementById('read-confirm-btn');
+            const saveScheduleBtn = document.getElementById('save-schedule');
+            const testScheduleBtn = document.getElementById('test-schedule'); 
+            const disableScheduleBtn = document.getElementById('disable-schedule');
             
             // Export buttons
             const exportDrugsBtn = document.getElementById('export-drugs');
@@ -919,22 +1019,34 @@
                 }
             });
 
-            // Xử lý popup Báo cáo Công nợ (thủ công)
-            reportBtn.addEventListener('click', function() {
-                showReportPopup();
+            // Xử lý popup lịch trình
+            scheduleBtn.addEventListener('click', function() {
+                loadScheduleData();
+                schedulePopup.style.display = 'flex';
             });
 
-            // Cho phép đóng popup thủ công bằng nút X
-            closeReportPopup.addEventListener('click', function() {
-                reportPopup.style.display = 'none';
+            closeSchedulePopup.addEventListener('click', function() {
+                schedulePopup.style.display = 'none';
             });
 
-            // Xử lý nút "Đã đọc" (chỉ ngăn popup tự động xuất hiện lại)
             readConfirmBtn.addEventListener('click', function() {
-                reportPopup.style.display = 'none';
+                schedulePopup.style.display = 'none';
                 const currentDate = new Date().toDateString();
-                localStorage.setItem('lastReportRead', currentDate);
-                console.log(`[Popup Auto] Đã đánh dấu "Đã đọc" cho ngày: ${currentDate}. Popup sẽ không tự động xuất hiện nữa.`);
+                localStorage.setItem('lastScheduleRead', currentDate);
+            });
+
+            saveScheduleBtn.addEventListener('click', function() {
+                saveScheduleSettings();
+            });
+
+            // Sự kiện Kiểm tra Ngay
+            testScheduleBtn.addEventListener('click', function() {
+                showSchedulePopup();
+                showStatus('Đã hiển thị báo cáo kiểm tra ngay.', 'info');
+            });
+
+            disableScheduleBtn.addEventListener('click', function() {
+                disableSchedule();
             });
             
             // Xử lý xóa dữ liệu
@@ -963,13 +1075,17 @@
                 try {
                     if (!db) {
                         showStatus('Firebase chưa được khởi tạo. Ứng dụng sẽ chạy ở chế độ offline.', 'info');
+                        // Tải cài đặt lịch trình từ local ngay cả khi offline
+                        await loadScheduleSettings(); 
                         loadFromLocalStorage();
-                        startPopupChecker();
+                        // Bắt đầu kiểm tra lịch trình (dựa trên local settings)
+                        startScheduleChecker();
                         return;
                     }
                     
                     await loadDataFromFirebase();
-                    startPopupChecker(); 
+                    await loadScheduleSettings();
+                    startScheduleChecker(); // Bắt đầu kiểm tra lịch trình
                     showStatus('Ứng dụng đã sẵn sàng!', 'success');
                 } catch (error) {
                     console.error('Lỗi khởi tạo ứng dụng:', error);
@@ -1008,8 +1124,7 @@
                     }
                 } catch (error) {
                     console.error('Lỗi khi tải dữ liệu từ Firebase:', error);
-                    // Dù có lỗi Firebase, vẫn phải tải dữ liệu local và chạy tiếp.
-                    loadFromLocalStorage(); 
+                    loadFromLocalStorage();
                 }
             }
 
@@ -1111,72 +1226,164 @@
                 }
             }
 
-            // --- Logic Popup Tự động ĐÃ TỐI ƯU CỰC ĐẠI ---
-            function startPopupChecker() {
-                if (popupCheckInterval) {
-                    clearInterval(popupCheckInterval);
-                }
+            // --- Firebase functions for schedule (ĐÃ CẢI TIẾN) ---
+            async function loadScheduleSettings() {
+                try {
+                    if (!db) {
+                        const savedSettings = localStorage.getItem('congno_schedule');
+                        if (savedSettings) {
+                            scheduleSettings = JSON.parse(savedSettings);
+                        }
+                        updateScheduleUI();
+                        calculateNextSchedule();
+                        return;
+                    }
 
-                // 1. THỰC HIỆN CHECK NGAY LẬP TỨC KHI MỞ TRANG
-                checkAutoPopup(); 
-                
-                // 2. Thiết lập interval chạy đều đặn mỗi phút (60000 ms) sau lần check đầu tiên
-                popupCheckInterval = setInterval(() => {
-                    checkAutoPopup();
-                }, 60000); 
-                
-                console.log(`[Popup Auto] Bộ kiểm tra popup đã khởi động.`);
+                    const snapshot = await db.collection('appData').doc('scheduleSettings').get();
+                    if (snapshot.exists) {
+                        scheduleSettings = snapshot.data();
+                        localStorage.setItem('congno_schedule', JSON.stringify(scheduleSettings));
+                        updateScheduleUI();
+                        calculateNextSchedule();
+                    } else {
+                        // Khởi tạo cài đặt mặc định nếu chưa có
+                        await saveScheduleSettings();
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi tải cài đặt lịch trình:', error);
+                    const savedSettings = localStorage.getItem('congno_schedule');
+                    if (savedSettings) {
+                        scheduleSettings = JSON.parse(savedSettings);
+                        updateScheduleUI();
+                        calculateNextSchedule();
+                    }
+                }
             }
 
-            function checkAutoPopup() {
-                const now = new Date();
-                const currentDay = now.getDay(); // 0 (Chủ nhật) - 6 (Thứ 7)
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
-                const currentDateStr = now.toDateString();
-                const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+            async function saveScheduleSettings() {
+                try {
+                    // Lấy giá trị từ UI
+                    const days = [0, 1, 2, 3, 4, 5, 6];
+                    days.forEach(day => {
+                        const checkbox = document.querySelector(`.day-checkbox[data-day="${day}"]`);
+                        const timeInput = document.querySelector(`.time-input[data-day="${day}"]`);
+                        if (checkbox && timeInput) {
+                            const dayName = getDayName(day);
+                            scheduleSettings[dayName] = {
+                                enabled: checkbox.checked,
+                                time: timeInput.value
+                            };
+                        }
+                    });
 
+                    // Đảm bảo scheduleSettings được bật
+                    scheduleSettings.enabled = true;
 
-                // 1. Kiểm tra xem popup đã xuất hiện trong ngày và được "Đã đọc" chưa
-                const lastRead = localStorage.getItem('lastReportRead');
-                if (lastRead === currentDateStr) {
-                    return; 
+                    // Lưu vào Local Storage
+                    localStorage.setItem('congno_schedule', JSON.stringify(scheduleSettings));
+
+                    // Lưu lên Firebase nếu có kết nối
+                    if (db) {
+                        await db.collection('appData').doc('scheduleSettings').set(scheduleSettings);
+                    }
+
+                    showStatus('Đã lưu cài đặt lịch trình!', 'success');
+                    calculateNextSchedule();
+                    startScheduleChecker(); // Khởi động lại checker với cài đặt mới
+
+                } catch (error) {
+                    console.error('Lỗi khi lưu cài đặt lịch trình:', error);
+                    showStatus('Lỗi khi lưu cài đặt lịch trình.', 'error');
+                }
+            }
+
+            function updateScheduleUI() {
+                const days = [0, 1, 2, 3, 4, 5, 6];
+                days.forEach(day => {
+                    const dayName = getDayName(day);
+                    const checkbox = document.querySelector(`.day-checkbox[data-day="${day}"]`);
+                    const timeInput = document.querySelector(`.time-input[data-day="${day}"]`);
+                    
+                    if (checkbox && timeInput && scheduleSettings[dayName]) {
+                        checkbox.checked = scheduleSettings[dayName].enabled;
+                        timeInput.value = scheduleSettings[dayName].time;
+                    }
+                });
+            }
+
+            function getDayName(dayNumber) {
+                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                return days[dayNumber];
+            }
+
+            // CẢI TIẾN: Căn chỉnh thời gian kiểm tra vào đầu phút (giây 00)
+            function startScheduleChecker() {
+                // Xóa interval cũ nếu có
+                if (scheduleCheckInterval) {
+                    clearInterval(scheduleCheckInterval);
                 }
 
-                // 2. Kiểm tra xem có phải ngày mục tiêu không
-                if (!autoPopupConfig.targetWeekdays.includes(currentDay)) {
+                if (!scheduleSettings.enabled) {
+                    console.log('Schedule checker is disabled.');
                     return;
                 }
 
-                // 3. Kiểm tra xem có phải giờ mục tiêu không
-                const isTargetTime = autoPopupConfig.openTimes.some(time => 
-                    time.hour === currentHour && time.minute === currentMinute
-                );
+                const now = new Date();
+                // Tính toán thời gian còn lại đến giây số 00 của phút kế tiếp
+                const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+                
+                console.log(`Kiểm tra lịch trình lần đầu sau ${msUntilNextMinute / 1000} giây.`);
 
-                // Ghi nhật ký trạng thái hiện tại (Dùng Console để xác nhận thành công)
-                console.log(`[Popup Auto - ${currentTimeStr}] Ngày: ${currentDay}. Mục tiêu: ${JSON.stringify(autoPopupConfig.openTimes)}. Kết quả: ${isTargetTime ? 'KÍCH HOẠT' : 'Bỏ qua'}`);
-
-
-                if (isTargetTime) {
-                    showReportPopup();
-                }
+                // Chạy lần kiểm tra đầu tiên sau khi căn chỉnh
+                setTimeout(() => {
+                    checkSchedule();
+                    
+                    // Sau lần kiểm tra đầu tiên, thiết lập interval chạy đều đặn mỗi phút
+                    scheduleCheckInterval = setInterval(() => {
+                        checkSchedule();
+                    }, 60000); // 60000 ms = 1 phút
+                }, msUntilNextMinute);
             }
 
-            function showReportPopup() {
-                // Đảm bảo dữ liệu mới nhất được tải/phân tích trước khi hiển thị
-                if ((overdueDrugs.length === 0 && overdueNonDrugs.length === 0) && orderData && debtData) {
-                    analyzeDebt(false); 
+            // CẢI TIẾN: Logic kiểm tra thời gian
+            function checkSchedule() {
+                if (!scheduleSettings.enabled) {
+                    return;
                 }
                 
-                loadReportData();
-                reportPopup.style.display = 'flex';
-                console.log(`[Popup Auto] Popup Báo cáo Công nợ đã hiển thị.`);
+                const now = new Date();
+                const currentDay = now.getDay(); // 0 (Chủ nhật) - 6 (Thứ 7)
+                // Lấy thời gian hiện tại dưới dạng HH:mm
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const currentDate = now.toDateString();
+
+                // 1. Kiểm tra xem đã đọc báo cáo hôm nay hay chưa
+                const lastRead = localStorage.getItem('lastScheduleRead');
+                if (lastRead === currentDate) {
+                    return; 
+                }
+
+                // 2. Kiểm tra xem có lịch trình nào khớp với ngày và giờ hiện tại không
+                const dayName = getDayName(currentDay);
+                const daySchedule = scheduleSettings[dayName];
+                
+                // Nếu lịch trình được bật và giờ khớp chính xác
+                if (daySchedule && daySchedule.enabled && daySchedule.time === currentTime) {
+                    console.log(`Lịch trình kích hoạt: ${dayName} lúc ${currentTime}`);
+                    showSchedulePopup();
+                }
             }
 
-            function loadReportData() {
+            function showSchedulePopup() {
+                loadScheduleData();
+                schedulePopup.style.display = 'flex';
+            }
+
+            function loadScheduleData() {
                 displayScheduleTable('schedule-drugs-table', overdueDrugs, 'drugs');
                 displayScheduleTable('schedule-non-drugs-table', overdueNonDrugs, 'non-drugs');
                 updateSummaryInfo();
+                calculateNextSchedule();
             }
 
             function updateSummaryInfo() {
@@ -1251,7 +1458,61 @@
                 html += `</tbody></table>`;
                 container.innerHTML = html;
             }
-            // --- Hết Logic Popup Tự động ĐÃ TỐI ƯU CỰC ĐẠI ---
+
+            // CẢI TIẾN: Logic tính toán lịch trình kế tiếp (tìm thời điểm gần nhất)
+            function calculateNextSchedule() {
+                const now = new Date();
+                let nextScheduleTime = null;
+                let minDiff = Infinity; // Khoảng thời gian nhỏ nhất (tính bằng mili giây)
+
+                for (let i = 0; i < 7; i++) {
+                    const checkDate = new Date(now);
+                    checkDate.setDate(now.getDate() + i);
+                    const checkDay = checkDate.getDay();
+                    const dayName = getDayName(checkDay);
+                    const daySchedule = scheduleSettings[dayName];
+                    
+                    if (daySchedule && daySchedule.enabled) {
+                        const [hours, minutes] = daySchedule.time.split(':').map(Number);
+                        const scheduleTime = new Date(checkDate);
+                        // Thiết lập giờ và phút cho ngày kiểm tra, giây và mili giây bằng 0
+                        scheduleTime.setHours(hours, minutes, 0, 0); 
+                        
+                        const diff = scheduleTime.getTime() - now.getTime();
+                        
+                        // Nếu lịch trình này trong tương lai (diff > 0) và gần hơn lịch trình đã tìm thấy
+                        if (diff > 0 && diff < minDiff) {
+                            minDiff = diff;
+                            nextScheduleTime = scheduleTime;
+                        }
+                    }
+                }
+
+                const nextScheduleInfo = document.getElementById('next-schedule-info');
+                if (nextScheduleTime) {
+                    const options = { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    };
+                    nextScheduleInfo.textContent = nextScheduleTime.toLocaleDateString('vi-VN', options);
+                } else {
+                    nextScheduleInfo.textContent = 'Không có lịch trình nào được kích hoạt';
+                }
+            }
+
+            function disableSchedule() {
+                scheduleSettings.enabled = false;
+                saveScheduleSettings();
+                showStatus('Đã tắt tính năng hiển thị tự động. Lịch trình đã lưu vẫn còn.', 'success');
+                // Dừng hẳn việc kiểm tra
+                if (scheduleCheckInterval) {
+                    clearInterval(scheduleCheckInterval);
+                }
+            }
             
             // Hàm đọc file Excel
             function readExcelFile(file, type) {
@@ -1311,8 +1572,7 @@
                 }, 5000);
             }
             
-            // Thêm tham số `showStatusMessage` để kiểm soát hiển thị thông báo
-            function analyzeDebt(showStatusMessage = true) {
+            function analyzeDebt() {
                 try {
                     const currentDate = new Date();
                     currentDate.setHours(0, 0, 0, 0);
@@ -1383,17 +1643,14 @@
                                     customerName: customerName,
                                     invoice: invoice,
                                     paymentDue: formatDate(paymentDueDate),
-                                    originalDebtAmount: debtAmount || orderDebtAmount, // Lưu trữ số tiền gốc
-                                    debtAmount: formatCurrency(debtAmount || orderDebtAmount), // Lưu trữ số tiền đã format
+                                    debtAmount: formatCurrency(debtAmount || orderDebtAmount),
                                     daysOverdue: daysOverdue,
                                     isPaid: false,
+                                    originalDebtAmount: debtAmount || orderDebtAmount,
                                     originalPaymentDue: paymentDueDate.getTime()
                                 };
                                 
-                                // Kiểm tra "Thuốc?"
-                                const isDrugValue = typeof isDrug === 'string' ? isDrug.toLowerCase() : isDrug;
-
-                                if (isDrugValue === true || isDrugValue === 'true' || isDrugValue === 1) {
+                                if (isDrug === true || isDrug === 'True' || isDrug === 'TRUE') {
                                     overdueDrugs.push(overdueItem);
                                 } else {
                                     overdueNonDrugs.push(overdueItem);
@@ -1406,20 +1663,16 @@
                     saveDataToFirebase();
                     displayResults(overdueDrugs, overdueNonDrugs);
                     
-                    if (showStatusMessage) {
-                        const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
-                        if (totalOverdue === 0) {
-                            showStatus('Không có công nợ nào quá hạn thanh toán.', 'success');
-                        } else {
-                            showStatus(`Đã tìm thấy ${totalOverdue} công nợ quá hạn (${overdueDrugs.length} thuốc, ${overdueNonDrugs.length} không phải thuốc).`, 'success');
-                        }
+                    const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
+                    if (totalOverdue === 0) {
+                        showStatus('Không có công nợ nào quá hạn thanh toán.', 'success');
+                    } else {
+                        showStatus(`Đã tìm thấy ${totalOverdue} công nợ quá hạn (${overdueDrugs.length} thuốc, ${overdueNonDrugs.length} không phải thuốc).`, 'success');
                     }
                     
                 } catch (error) {
                     console.error('Lỗi khi phân tích công nợ:', error);
-                    if (showStatusMessage) {
-                        showStatus('Đã xảy ra lỗi khi phân tích dữ liệu: ' + error.message, 'error');
-                    }
+                    showStatus('Đã xảy ra lỗi khi phân tích dữ liệu: ' + error.message, 'error');
                 }
             }
             
@@ -1509,16 +1762,8 @@
                     const match = str.match(format);
                     if (match) {
                         if (format === formats[0]) {
-                            // dd/mm/yyyy
                             return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
                         } else if (format === formats[1]) {
-                            // yyyy-mm-dd (iso)
-                            return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
-                        } else if (format === formats[2]) {
-                            // dd-mm-yyyy
-                            return new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
-                        } else if (format === formats[3]) {
-                            // yyyy/mm/dd
                             return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
                         }
                     }
@@ -1550,11 +1795,8 @@
             }
             
             function formatCurrency(amount) {
-                if (amount === undefined || amount === null || isNaN(amount)) return '0';
-                const numericAmount = parseFloat(String(amount).toString().replace(/[^\d.]/g, ''));
-                if (isNaN(numericAmount)) return '0';
-                
-                return new Intl.NumberFormat('vi-VN').format(numericAmount);
+                if (!amount) return '0';
+                return new Intl.NumberFormat('vi-VN').format(amount);
             }
             
             function displayResults(drugs, nonDrugs) {
@@ -1635,7 +1877,6 @@
                         if (newDaysOverdue !== item.daysOverdue) {
                             item.daysOverdue = newDaysOverdue;
                             updated = true;
-                            item.debtAmount = formatCurrency(item.originalDebtAmount);
                         }
                     }
                 });
@@ -1648,7 +1889,6 @@
                         if (newDaysOverdue !== item.daysOverdue) {
                             item.daysOverdue = newDaysOverdue;
                             updated = true;
-                            item.debtAmount = formatCurrency(item.originalDebtAmount);
                         }
                     }
                 });
@@ -1687,8 +1927,7 @@
                         item.orderCode || '',
                         item.customerName || '',
                         item.paymentDue || '',
-                        // Sử dụng originalDebtAmount (số thô) cho Excel
-                        item.originalDebtAmount || '', 
+                        item.debtAmount || '',
                         item.daysOverdue || '',
                         item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'
                     ]);
@@ -1704,7 +1943,7 @@
             }
         });
         
-        // Global functions for event handlers (cần được giữ lại)
+        // Global functions for event handlers
         window.togglePaidStatus = function(id, isPaid, type) {
             let dataArray = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
             const item = dataArray.find(item => item.id === id);
@@ -1722,7 +1961,8 @@
                     }
                 }
                 
-                window.saveDataToFirebase();
+                saveDataToFirebase();
+                showStatus(`Đã ${isPaid ? 'đánh dấu' : 'bỏ đánh dấu'} đã thanh toán cho công nợ.`, 'success');
             }
         };
         
@@ -1731,13 +1971,10 @@
             const itemIndex = dataArray.findIndex(item => item.id === id);
             
             if (itemIndex !== -1) {
-                // Xóa khỏi mảng
                 dataArray.splice(itemIndex, 1);
-                window.saveDataToFirebase();
-                
-                // Xóa khỏi DOM (cách nhanh nhất)
-                const row = document.getElementById(`row-${id}`);
-                if(row) row.remove();
+                saveDataToFirebase();
+                displayResults(overdueDrugs, overdueNonDrugs);
+                showStatus('Đã xóa công nợ đã thanh toán khỏi danh sách.', 'success');
             }
         };
         

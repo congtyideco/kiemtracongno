@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        /* CSS giữ nguyên 100% từ file gốc */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -750,6 +749,7 @@
                 readExcelFile(file, 'debt');
             }
         });
+        // 🔥 SỬA: THÊM finally ĐỂ LUÔN RESET NÚT
         saveCloudBtn.addEventListener('click', async function() {
             if (!orderData && !debtData && overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
                 showStatus('Không có dữ liệu để lưu lên Cloud.', 'info');
@@ -757,9 +757,17 @@
             }
             this.textContent = 'Đang lưu...';
             this.disabled = true;
-            await saveDataToFirebase(true);
-            this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
-            this.disabled = false;
+            try {
+                await saveDataToFirebase(true);
+                showStatus('✅ Lưu Cloud thành công!', 'success');
+            } catch (error) {
+                console.error('Lỗi khi lưu Cloud:', error);
+                showStatus('❌ Lỗi lưu Cloud: ' + (error.message || 'Vui lòng kiểm tra kết nối và cấu hình Firebase'), 'error');
+            } finally {
+                // 🔥 LUÔN RESET NÚT
+                this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
+                this.disabled = false;
+            }
         });
         analyzeBtn.addEventListener('click', async function() {
             if (!orderData || !debtData) {
@@ -805,7 +813,6 @@
             reportPopup.style.display = 'none';
             const currentDate = new Date().toDateString();
             localStorage.setItem('lastReportRead', currentDate);
-            console.log(`[Popup Auto] Đã đánh dấu "Đã đọc" cho ngày: ${currentDate}. Popup sẽ không tự động xuất hiện nữa.`);
         });
         deleteBtn.addEventListener('click', function() {
             if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu trên Firebase? Thao tác này không thể hoàn tác.')) {
@@ -849,20 +856,16 @@
                 const snapshot = await db.collection('appData').doc('currentData').get();
                 if (snapshot.exists) {
                     const data = snapshot.data();
-                    // 🔥 CHỈ LẤY overdueDrugs và overdueNonDrugs từ Firebase
+                    // 🔥 CHỈ LẤY overdueDrugs và overdueNonDrugs
                     overdueDrugs = data.overdueDrugs || [];
                     overdueNonDrugs = data.overdueNonDrugs || [];
-                    // orderData và debtData KHÔNG được lưu → giữ nguyên null
                     orderData = null;
                     debtData = null;
-                    // Cập nhật UI
                     if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
                         displayResults(overdueDrugs, overdueNonDrugs);
                     }
-                    // Cập nhật trạng thái file (hiển thị "chưa tải file")
                     document.getElementById('order-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải lên)</div>';
                     document.getElementById('debt-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải lên)</div>';
-                    // Lưu vào Local Storage (không có file gốc)
                     localStorage.setItem('congno_data', JSON.stringify({
                         orderData: null,
                         debtData: null,
@@ -908,31 +911,25 @@
                 document.getElementById('debt-file-status').innerHTML = '';
             }
         }
+        // 🔥 SỬA: CHỈ LƯU overdueDrugs/overdueNonDrugs LÊN FIREBASE
         async function saveDataToFirebase(forceCloudSave = false) {
-            // 🔥 DỮ LIỆU ĐẦY ĐỦ ĐƯỢC LƯU VÀO LOCAL STORAGE (kể cả mảng 2 chiều)
-            const fullDataToSave = {
+            // Luôn lưu đầy đủ vào Local Storage
+            const fullData = {
                 orderData: orderData,
                 debtData: debtData,
                 overdueDrugs: overdueDrugs,
                 overdueNonDrugs: overdueNonDrugs,
                 lastUpdated: new Date().toISOString()
             };
-            localStorage.setItem('congno_data', JSON.stringify(fullDataToSave));
-            // 🔥 NHƯNG CHỈ GỬI KẾT QUẢ LÊN FIREBASE
+            localStorage.setItem('congno_data', JSON.stringify(fullData));
+            // Chỉ lưu kết quả lên Firebase
             if (db && forceCloudSave) {
-                try {
-                    const cloudData = {
-                        overdueDrugs: overdueDrugs,
-                        overdueNonDrugs: overdueNonDrugs,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    await db.collection('appData').doc('currentData').set(cloudData);
-                    showStatus('✅ Dữ liệu kết quả đã được LƯU thành công lên Cloud (Firebase).', 'success');
-                    console.log('Kết quả công nợ đã lưu lên Firebase.');
-                } catch (error) {
-                    showStatus('❌ LỖI: Không thể lưu dữ liệu lên Cloud. Kiểm tra kết nối và quyền Firebase.', 'error');
-                    console.error('Lỗi khi lưu dữ liệu lên Firebase:', error);
-                }
+                const cloudData = {
+                    overdueDrugs: overdueDrugs,
+                    overdueNonDrugs: overdueNonDrugs,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('appData').doc('currentData').set(cloudData);
             }
         }
         async function deleteAllData() {
@@ -962,7 +959,6 @@
             if (popupCheckInterval) clearInterval(popupCheckInterval);
             checkAutoPopup(); 
             popupCheckInterval = setInterval(checkAutoPopup, 60000); 
-            console.log(`[Popup Auto] Bộ kiểm tra popup đã khởi động.`);
         }
         function checkAutoPopup() {
             const now = new Date();
@@ -1033,13 +1029,10 @@
                         updateFileStatus('debt-file-status', file.name, true);
                     }
                     saveDataToFirebase(false); 
-                    showStatus('File đã được tải lên và lưu vào Local Storage thành công.', 'info');
+                    showStatus('File đã được tải lên thành công.', 'info');
                 } catch (error) {
                     showStatus('Lỗi khi đọc file: ' + error.message, 'error');
                 }
-            };
-            reader.onerror = function() {
-                showStatus('Lỗi khi đọc file.', 'error');
             };
             reader.readAsArrayBuffer(file);
         }
@@ -1332,12 +1325,7 @@
                 overdueNonDrugs: overdueNonDrugs,
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             };
-            try {
-                await db.collection('appData').doc('currentData').set(cloudData);
-                console.log('Kết quả công nợ đã lưu lên Firebase (Global).');
-            } catch (error) {
-                console.error('Lỗi khi lưu dữ liệu lên Firebase (Global):', error);
-            }
+            await db.collection('appData').doc('currentData').set(cloudData);
         }
     };
 </script>

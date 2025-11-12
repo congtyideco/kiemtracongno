@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
+        /* ... (toàn bộ CSS của bạn được giữ nguyên) ... */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -416,6 +417,231 @@
             background: #f39c12;
             color: white;
         }
+
+        /* Schedule Popup Styles */
+        .schedule-popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .schedule-popup-content {
+            background: white;
+            width: 95%;
+            height: 90%;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .schedule-popup-header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .schedule-popup-header h2 {
+            margin: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .schedule-popup-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-height: calc(100% - 140px);
+        }
+        
+        .schedule-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .schedule-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            flex-shrink: 0;
+        }
+        
+        .schedule-table-container {
+            overflow-y: auto;
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        .schedule-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .schedule-table td {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+        
+        .schedule-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .schedule-table tr:hover {
+            background: #e3f2fd;
+        }
+        
+        .schedule-popup-footer {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .read-confirm-btn {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .read-confirm-btn:hover {
+            background: linear-gradient(135deg, #219653, #1e8449);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+        
+        .scheduler-config {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px dashed #bdc3c7;
+            margin-top: 20px;
+            grid-column: 1 / -1;
+        }
+        
+        .time-input {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        .day-checkbox {
+            margin: 10px 5px;
+        }
+        
+        .config-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .save-schedule-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-schedule-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .close-schedule-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .next-schedule {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        
+        .next-schedule h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        
+        .summary-info {
+            background: #e8f4fd;
+            border: 1px solid #b3d9f7;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 1024px) {
+            .schedule-popup-body {
+                grid-template-columns: 1fr;
+            }
+            
+            .schedule-table {
+                min-width: 400px;
+            }
+        }
         
         @media (max-width: 768px) {
             .upload-grid {
@@ -432,18 +658,53 @@
                 margin-top: 15px;
                 justify-content: flex-end;
             }
+            
+            .schedule-popup-content {
+                width: 98%;
+                height: 95%;
+            }
+            
+            .schedule-table {
+                min-width: 300px;
+                font-size: 12px;
+            }
+            
+            .schedule-table th,
+            .schedule-table td {
+                padding: 8px 4px;
+            }
+        }
+
+        .schedule-table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .schedule-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .schedule-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .schedule-table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>ỨNG DỤNG QUÀN LÝ NỢ PHARMACITY HAY CHUỖI KHÁC</h1>
-            <p>Định kỳ cập nhật dữ liệu công nợ - đơn hàng khách hàng</p>
+            <h1>Ứng dụng Kiểm soát Công nợ</h1>
+            <p>Theo dõi và quản lý công nợ khách hàng hiệu quả - Đồng bộ đa thiết bị</p>
             <div class="header-controls">
                 <button class="update-all-btn" id="update-all-btn">🔄 Cập nhật tất cả</button>
                 <button class="delete-btn" id="delete-btn">🗑️ Xóa dữ liệu</button>
                 <button class="help-btn" id="help-btn">❓ Hướng dẫn</button>
+                <button class="help-btn" id="schedule-btn">⏰ Lịch trình</button>
             </div>
         </div>
         
@@ -501,7 +762,6 @@
         </div>
     </div>
 
-    <!-- Popup Hướng dẫn -->
     <div class="popup-overlay" id="help-popup">
         <div class="popup-content">
             <div class="popup-header">
@@ -561,6 +821,76 @@
         </div>
     </div>
 
+    <div class="schedule-popup-overlay" id="schedule-popup">
+        <div class="schedule-popup-content">
+            <div class="schedule-popup-header">
+                <h2>⏰ BÁO CÁO CÔNG NỢ HÀNG NGÀY</h2>
+                <button class="close-btn" id="close-schedule-popup">×</button>
+            </div>
+            <div class="schedule-popup-body">
+                <div class="schedule-section">
+                    <h3>💊 CÔNG NỢ THUỐC</h3>
+                    <div class="summary-info" id="drugs-summary">
+                        Đang tải dữ liệu...
+                    </div>
+                    <div class="schedule-table-container">
+                        <div id="schedule-drugs-table"></div>
+                    </div>
+                </div>
+                
+                <div class="schedule-section">
+                    <h3>📦 CÔNG NỢ KHÔNG PHẢI THUỐC</h3>
+                    <div class="summary-info" id="non-drugs-summary">
+                        Đang tải dữ liệu...
+                    </div>
+                    <div class="schedule-table-container">
+                        <div id="schedule-non-drugs-table"></div>
+                    </div>
+                </div>
+                
+                <div class="scheduler-config">
+                    <h4>⚙️ CÀI ĐẶT LỊCH TRÌNH TỰ ĐỘNG</h4>
+                    <div>
+                        <label><input type="checkbox" class="day-checkbox" data-day="1"> Thứ 2</label>
+                        <input type="time" class="time-input" data-day="1" value="08:30">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="2"> Thứ 3</label>
+                        <input type="time" class="time-input" data-day="2" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="3"> Thứ 4</label>
+                        <input type="time" class="time-input" data-day="3" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="4"> Thứ 5</label>
+                        <input type="time" class="time-input" data-day="4" value="09:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="5"> Thứ 6</label>
+                        <input type="time" class="time-input" data-day="5" value="08:30">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="6"> Thứ 7</label>
+                        <input type="time" class="time-input" data-day="6" value="08:00">
+                        
+                        <label><input type="checkbox" class="day-checkbox" data-day="0"> Chủ nhật</label>
+                        <input type="time" class="time-input" data-day="0" value="09:00">
+                    </div>
+                    
+                    <div class="config-buttons">
+                        <button class="save-schedule-btn" id="save-schedule">💾 Lưu Lịch trình</button>
+                        <button class="test-schedule-btn" id="test-schedule">🧪 Kiểm tra Ngay</button>
+                        <button class="close-schedule-btn" id="disable-schedule">🚫 Tắt Tự động</button>
+                    </div>
+                    
+                    <div class="next-schedule">
+                        <h4>📅 LỊCH TRÌNH KẾ TIẾP:</h4>
+                        <div id="next-schedule-info">Đang tính toán...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="schedule-popup-footer">
+                <button class="read-confirm-btn" id="read-confirm-btn">✅ ĐÃ ĐỌC</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Firebase configuration
         const firebaseConfig = {
@@ -573,16 +903,35 @@
             measurementId: "G-JKCC98KQDW"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // Initialize Firebase với error handling
+        let db;
+        try {
+            const app = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+        }
 
         // Biến toàn cục
         let orderData = null;
         let debtData = null;
         let overdueDrugs = [];
         let overdueNonDrugs = [];
-        let currentData = null;
+        
+        // Biến cho lịch trình
+        let scheduleSettings = {
+            enabled: true,
+            monday: { enabled: true, time: "07:07" },
+            tuesday: { enabled: true, time: "09:00" },
+            wednesday: { enabled: true, time: "09:00" },
+            thursday: { enabled: true, time: "09:00" },
+            friday: { enabled: true, time: "08:30" },
+            saturday: { enabled: true, time: "08:00" },
+            sunday: { enabled: true, time: "09:00" }
+        };
+
+        let scheduleCheckInterval = null;
         
         // Định nghĩa các chỉ số cột toàn cục
         const invoiceIndex = 3;
@@ -602,15 +951,22 @@
             const helpBtn = document.getElementById('help-btn');
             const deleteBtn = document.getElementById('delete-btn');
             const updateAllBtn = document.getElementById('update-all-btn');
+            const scheduleBtn = document.getElementById('schedule-btn');
             const helpPopup = document.getElementById('help-popup');
             const closePopup = document.getElementById('close-popup');
+            const schedulePopup = document.getElementById('schedule-popup');
+            const closeSchedulePopup = document.getElementById('close-schedule-popup');
+            const readConfirmBtn = document.getElementById('read-confirm-btn');
+            const saveScheduleBtn = document.getElementById('save-schedule');
+            const testScheduleBtn = document.getElementById('test-schedule');
+            const disableScheduleBtn = document.getElementById('disable-schedule');
             
             // Export buttons
             const exportDrugsBtn = document.getElementById('export-drugs');
             const exportNonDrugsBtn = document.getElementById('export-non-drugs');
             
             // Tải dữ liệu từ Firebase khi khởi động
-            loadDataFromFirebase();
+            initializeApp();
 
             // Xử lý sự kiện file upload
             fileOrderInput.addEventListener('change', function(e) {
@@ -662,6 +1018,34 @@
                     helpPopup.style.display = 'none';
                 }
             });
+
+            // Xử lý popup lịch trình
+            scheduleBtn.addEventListener('click', function() {
+                loadScheduleData();
+                schedulePopup.style.display = 'flex';
+            });
+
+            closeSchedulePopup.addEventListener('click', function() {
+                schedulePopup.style.display = 'none';
+            });
+
+            readConfirmBtn.addEventListener('click', function() {
+                schedulePopup.style.display = 'none';
+                const currentDate = new Date().toDateString();
+                localStorage.setItem('lastScheduleRead', currentDate);
+            });
+
+            saveScheduleBtn.addEventListener('click', function() {
+                saveScheduleSettings();
+            });
+
+            testScheduleBtn.addEventListener('click', function() {
+                showSchedulePopup();
+            });
+
+            disableScheduleBtn.addEventListener('click', function() {
+                disableSchedule();
+            });
             
             // Xử lý xóa dữ liệu
             deleteBtn.addEventListener('click', function() {
@@ -683,56 +1067,145 @@
             exportNonDrugsBtn.addEventListener('click', function() {
                 exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc');
             });
-            
+
+            // Bắt đầu kiểm tra lịch trình
+            startScheduleChecker();
+
+            // Hàm khởi tạo ứng dụng
+            async function initializeApp() {
+                try {
+                    if (!db) {
+                        showStatus('Firebase chưa được khởi tạo. Ứng dụng sẽ chạy ở chế độ offline.', 'info');
+                        return;
+                    }
+                    
+                    await loadDataFromFirebase();
+                    await loadScheduleSettings();
+                    showStatus('Ứng dụng đã sẵn sàng!', 'success');
+                } catch (error) {
+                    console.error('Lỗi khởi tạo ứng dụng:', error);
+                    showStatus('Lỗi khởi tạo ứng dụng. Kiểm tra kết nối internet.', 'error');
+                }
+            }
+
             // Firebase functions
             async function loadDataFromFirebase() {
                 try {
+                    if (!db) {
+                        console.log('Firebase không khả dụng, sử dụng dữ liệu local');
+                        loadFromLocalStorage();
+                        return;
+                    }
+
                     const snapshot = await db.collection('appData').doc('currentData').get();
                     if (snapshot.exists) {
-                        currentData = snapshot.data();
-                        orderData = currentData.orderData;
-                        debtData = currentData.debtData;
-                        overdueDrugs = currentData.overdueDrugs || [];
-                        overdueNonDrugs = currentData.overdueNonDrugs || [];
+                        const data = snapshot.data();
+                        orderData = data.orderData || null;
+                        debtData = data.debtData || null;
+                        overdueDrugs = data.overdueDrugs || [];
+                        overdueNonDrugs = data.overdueNonDrugs || [];
                         
-                        showStatus('Đã tải dữ liệu từ Firebase.', 'success');
+                        // Cập nhật UI
+                        updateFileStatusFromData();
                         
                         if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
                             displayResults(overdueDrugs, overdueNonDrugs);
                         }
+                        
+                        console.log('Đã tải dữ liệu từ Firebase');
                     } else {
-                        showStatus('Chưa có dữ liệu trên Firebase. Vui lòng upload file.', 'info');
+                        console.log('Chưa có dữ liệu trên Firebase');
+                        loadFromLocalStorage();
                     }
                 } catch (error) {
                     console.error('Lỗi khi tải dữ liệu từ Firebase:', error);
-                    showStatus('Lỗi khi tải dữ liệu từ Firebase.', 'error');
+                    loadFromLocalStorage();
+                }
+            }
+
+            function loadFromLocalStorage() {
+                try {
+                    const savedData = localStorage.getItem('congno_data');
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        orderData = data.orderData || null;
+                        debtData = data.debtData || null;
+                        overdueDrugs = data.overdueDrugs || [];
+                        overdueNonDrugs = data.overdueNonDrugs || [];
+                        
+                        updateFileStatusFromData();
+                        
+                        if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
+                            displayResults(overdueDrugs, overdueNonDrugs);
+                        }
+                        
+                        console.log('Đã tải dữ liệu từ Local Storage');
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi tải dữ liệu từ Local Storage:', error);
+                }
+            }
+
+            function updateFileStatusFromData() {
+                if (orderData) {
+                    updateFileStatus('order-file-status', 'File đã tải từ lưu trữ', true);
+                }
+                if (debtData) {
+                    updateFileStatus('debt-file-status', 'File đã tải từ lưu trữ', true);
                 }
             }
             
             async function saveDataToFirebase() {
                 try {
-                    await db.collection('appData').doc('currentData').set({
+                    // Lưu vào Local Storage trước
+                    const dataToSave = {
                         orderData: orderData,
                         debtData: debtData,
                         overdueDrugs: overdueDrugs,
                         overdueNonDrugs: overdueNonDrugs,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log('Dữ liệu đã lưu lên Firebase');
+                        lastUpdated: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                    
+                    // Sau đó lưu lên Firebase nếu có kết nối
+                    if (db) {
+                        await db.collection('appData').doc('currentData').set({
+                            ...dataToSave,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log('Dữ liệu đã lưu lên Firebase và Local Storage');
+                    } else {
+                        console.log('Dữ liệu đã lưu vào Local Storage (offline mode)');
+                    }
                 } catch (error) {
-                    console.error('Lỗi khi lưu dữ liệu lên Firebase:', error);
-                    showStatus('Lỗi khi lưu dữ liệu lên Firebase.', 'error');
+                    console.error('Lỗi khi lưu dữ liệu:', error);
+                    // Vẫn lưu vào Local Storage ngay cả khi Firebase lỗi
+                    const dataToSave = {
+                        orderData: orderData,
+                        debtData: debtData,
+                        overdueDrugs: overdueDrugs,
+                        overdueNonDrugs: overdueNonDrugs,
+                        lastUpdated: new Date().toISOString()
+                    };
+                    localStorage.setItem('congno_data', JSON.stringify(dataToSave));
                 }
             }
             
             async function deleteAllData() {
                 try {
-                    await db.collection('appData').doc('currentData').delete();
+                    // Xóa từ Local Storage
+                    localStorage.removeItem('congno_data');
+                    
+                    // Xóa từ Firebase nếu có kết nối
+                    if (db) {
+                        await db.collection('appData').doc('currentData').delete();
+                    }
+                    
                     orderData = null;
                     debtData = null;
                     overdueDrugs = [];
                     overdueNonDrugs = [];
-                    currentData = null;
                     
                     // Reset UI
                     document.getElementById('order-file-status').innerHTML = '';
@@ -741,12 +1214,275 @@
                     document.getElementById('file-debt').value = '';
                     resultsContainer.style.display = 'none';
                     
-                    showStatus('Đã xóa toàn bộ dữ liệu trên Firebase.', 'success');
+                    showStatus('Đã xóa toàn bộ dữ liệu.', 'success');
                 } catch (error) {
                     console.error('Lỗi khi xóa dữ liệu:', error);
                     showStatus('Lỗi khi xóa dữ liệu.', 'error');
                 }
             }
+
+            // Firebase functions for schedule
+async function loadScheduleSettings() {
+    try {
+        if (!db) {
+            const savedSettings = localStorage.getItem('congno_schedule');
+            if (savedSettings) {
+                scheduleSettings = JSON.parse(savedSettings);
+            }
+            updateScheduleUI();
+            calculateNextSchedule();
+            return;
+        }
+
+        const snapshot = await db.collection('appData').doc('scheduleSettings').get();
+        if (snapshot.exists) {
+            scheduleSettings = snapshot.data();
+            localStorage.setItem('congno_schedule', JSON.stringify(scheduleSettings));
+            updateScheduleUI();
+            calculateNextSchedule();
+        } else {
+            // Khởi tạo cài đặt mặc định nếu chưa có
+            await saveScheduleSettings();
+        }
+    } catch (error) {
+        console.error('Lỗi khi tải cài đặt lịch trình:', error);
+        const savedSettings = localStorage.getItem('congno_schedule');
+        if (savedSettings) {
+            scheduleSettings = JSON.parse(savedSettings);
+            updateScheduleUI();
+            calculateNextSchedule();
+        }
+    }
+}
+
+async function saveScheduleSettings() {
+    try {
+        // Lấy giá trị từ UI
+        const days = [0, 1, 2, 3, 4, 5, 6];
+        days.forEach(day => {
+            const checkbox = document.querySelector(`.day-checkbox[data-day="${day}"]`);
+            const timeInput = document.querySelector(`.time-input[data-day="${day}"]`);
+            if (checkbox && timeInput) {
+                const dayName = getDayName(day);
+                scheduleSettings[dayName] = {
+                    enabled: checkbox.checked,
+                    time: timeInput.value
+                };
+            }
+        });
+
+        // Đảm bảo scheduleSettings được bật
+        scheduleSettings.enabled = true;
+
+        // Lưu vào Local Storage
+        localStorage.setItem('congno_schedule', JSON.stringify(scheduleSettings));
+
+        // Lưu lên Firebase nếu có kết nối
+        if (db) {
+            await db.collection('appData').doc('scheduleSettings').set(scheduleSettings);
+        }
+
+        showStatus('Đã lưu cài đặt lịch trình!', 'success');
+        calculateNextSchedule();
+        
+        // ĐÃ XÓA 3 DÒNG LỖI (setTimeout) Ở ĐÂY
+        
+    } catch (error) {
+        console.error('Lỗi khi lưu cài đặt lịch trình:', error);
+        showStatus('Lỗi khi lưu cài đặt lịch trình.', 'error');
+    }
+}
+// Sửa dòng này trong phần xử lý sự kiện
+/* ĐÃ XÓA TRÌNH XỬ LÝ SỰ KIỆN LỖI (testScheduleBtn.addEventListener) Ở ĐÂY */
+
+function updateScheduleUI() {
+    const days = [0, 1, 2, 3, 4, 5, 6];
+    days.forEach(day => {
+        const dayName = getDayName(day);
+        const checkbox = document.querySelector(`.day-checkbox[data-day="${day}"]`);
+        const timeInput = document.querySelector(`.time-input[data-day="${day}"]`);
+        
+        if (checkbox && timeInput && scheduleSettings[dayName]) {
+            checkbox.checked = scheduleSettings[dayName].enabled;
+            timeInput.value = scheduleSettings[dayName].time;
+        }
+    });
+}
+
+function getDayName(dayNumber) {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[dayNumber];
+}
+
+function startScheduleChecker() {
+    // Kiểm tra mỗi phút
+    scheduleCheckInterval = setInterval(() => {
+        if (scheduleSettings.enabled) {
+            checkSchedule();
+        }
+    }, 60000);
+
+    // Kiểm tra ngay khi khởi động
+    setTimeout(() => {
+        if (scheduleSettings.enabled) {
+            checkSchedule();
+        }
+    }, 5000);
+}
+
+function checkSchedule() {
+                const now = new Date();
+                const currentDay = now.getDay();
+                const currentTime = now.toTimeString().slice(0, 5);
+                const currentDate = now.toDateString();
+
+                // Lấy ngày 'Đã Đọc' từ localStorage
+                const lastRead = localStorage.getItem('lastScheduleRead');
+
+                // CHỈ KIỂM TRA NẾU CHƯA ĐỌC HÔM NAY
+                if (lastRead === currentDate) {
+                    return; // Đã đọc hôm nay, không làm gì cả
+                }
+
+                const dayName = getDayName(currentDay);
+                const daySchedule = scheduleSettings[dayName];
+
+                // Kiểm tra xem đã đến giờ và được bật hay chưa
+                if (daySchedule && daySchedule.enabled && daySchedule.time === currentTime) {
+                    // Đã đến giờ và chưa đọc
+                    showSchedulePopup();
+                }
+            }
+
+function showSchedulePopup() {
+    loadScheduleData();
+    schedulePopup.style.display = 'flex';
+}
+
+function loadScheduleData() {
+    displayScheduleTable('schedule-drugs-table', overdueDrugs, 'drugs');
+    displayScheduleTable('schedule-non-drugs-table', overdueNonDrugs, 'non-drugs');
+    updateSummaryInfo();
+    calculateNextSchedule();
+}
+
+function updateSummaryInfo() {
+    const drugsSummary = document.getElementById('drugs-summary');
+    const nonDrugsSummary = document.getElementById('non-drugs-summary');
+    
+    const totalDrugs = overdueDrugs.length;
+    const paidDrugs = overdueDrugs.filter(item => item.isPaid).length;
+    const overdueDrugsCount = totalDrugs - paidDrugs;
+    
+    const totalNonDrugs = overdueNonDrugs.length;
+    const paidNonDrugs = overdueNonDrugs.filter(item => item.isPaid).length;
+    const overdueNonDrugsCount = totalNonDrugs - paidNonDrugs;
+    
+    drugsSummary.innerHTML = `📊 Tổng: ${totalDrugs} công nợ | ✅ Đã thanh toán: ${paidDrugs} | ⚠️ Còn nợ: ${overdueDrugsCount}`;
+    nonDrugsSummary.innerHTML = `📊 Tổng: ${totalNonDrugs} công nợ | ✅ Đã thanh toán: ${paidNonDrugs} | ⚠️ Còn nợ: ${overdueNonDrugsCount}`;
+}
+
+function displayScheduleTable(containerId, data, type) {
+    const container = document.getElementById(containerId);
+    
+    if (data.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <h3>🎉 KHÔNG CÓ CÔNG NỢ NÀO</h3>
+                <p>Không có công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'} nào quá hạn.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <table class="schedule-table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>MÃ HD</th>
+                    <th>MÃ ĐH</th>
+                    <th>KHÁCH HÀNG</th>
+                    <th>NGÀY THANH TOÁN</th>
+                    <th>SỐ TIỀN NỢ</th>
+                    <th>NGÀY QUÁ HẠN</th>
+                    <th>TRẠNG THÁI</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    data.forEach((item, index) => {
+        const status = item.isPaid ? 
+            '<span style="color: #27ae60; font-weight: bold;">✅ ĐÃ THANH TOÁN</span>' : 
+            '<span style="color: #e74c3c; font-weight: bold;">❌ CHƯA THANH TOÁN</span>';
+        
+        html += `
+            <tr class="${item.isPaid ? 'paid-row' : ''}">
+                <td>${index + 1}</td>
+                <td><strong>${item.invoice || 'N/A'}</strong></td>
+                <td><strong>${item.orderCode || 'N/A'}</strong></td>
+                <td>${item.customerName || 'N/A'}</td>
+                <td>${item.paymentDue || 'N/A'}</td>
+                <td style="text-align: right; font-weight: bold;">${item.debtAmount || '0'}</td>
+                <td style="text-align: center;">
+                    <span style="background: ${item.daysOverdue > 30 ? '#e74c3c' : item.daysOverdue > 15 ? '#f39c12' : '#f1c40f'}; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
+                        ${item.daysOverdue || '0'} ngày
+                    </span>
+                </td>
+                <td>${status}</td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function calculateNextSchedule() {
+    const now = new Date();
+    const nextScheduleInfo = document.getElementById('next-schedule-info');
+    
+    let nextSchedule = null;
+    for (let i = 0; i < 7; i++) {
+        const checkDate = new Date(now);
+        checkDate.setDate(now.getDate() + i);
+        const checkDay = checkDate.getDay();
+        const dayName = getDayName(checkDay);
+        const daySchedule = scheduleSettings[dayName];
+        
+        if (daySchedule && daySchedule.enabled) {
+            const [hours, minutes] = daySchedule.time.split(':').map(Number);
+            const scheduleTime = new Date(checkDate);
+            scheduleTime.setHours(hours, minutes, 0, 0);
+            
+            if (scheduleTime > now) {
+                nextSchedule = scheduleTime;
+                break;
+            }
+        }
+    }
+
+    if (nextSchedule) {
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        nextScheduleInfo.textContent = nextSchedule.toLocaleDateString('vi-VN', options);
+    } else {
+        nextScheduleInfo.textContent = 'Không có lịch trình nào được kích hoạt';
+    }
+}
+
+function disableSchedule() {
+    scheduleSettings.enabled = false;
+    saveScheduleSettings();
+    showStatus('Đã tắt tính năng hiển thị tự động.', 'success');
+}
             
             // Hàm đọc file Excel
             function readExcelFile(file, type) {
@@ -768,9 +1504,9 @@
                             updateFileStatus('debt-file-status', file.name, true);
                         }
                         
-                        // Tự động lưu lên Firebase khi upload file
+                        // Tự động lưu khi upload file
                         saveDataToFirebase();
-                        showStatus('File đã được tải lên và lưu lên Firebase.', 'success');
+                        showStatus('File đã được tải lên và lưu thành công.', 'success');
                     } catch (error) {
                         showStatus('Lỗi khi đọc file: ' + error.message, 'error');
                     }
@@ -893,7 +1629,7 @@
                         }
                     }
                     
-                    // Lưu lên Firebase
+                    // Lưu dữ liệu
                     saveDataToFirebase();
                     displayResults(overdueDrugs, overdueNonDrugs);
                     
@@ -1195,7 +1931,6 @@
                     }
                 }
                 
-                // Lưu lên Firebase
                 saveDataToFirebase();
                 showStatus(`Đã ${isPaid ? 'đánh dấu' : 'bỏ đánh dấu'} đã thanh toán cho công nợ.`, 'success');
             }
@@ -1206,33 +1941,41 @@
             const itemIndex = dataArray.findIndex(item => item.id === id);
             
             if (itemIndex !== -1) {
-                const item = dataArray[itemIndex];
-                
-                // Xóa hàng khỏi mảng
                 dataArray.splice(itemIndex, 1);
-                
-                // Lưu lên Firebase
                 saveDataToFirebase();
-                
-                // Hiển thị lại bảng
                 displayResults(overdueDrugs, overdueNonDrugs);
-                
                 showStatus('Đã xóa công nợ đã thanh toán khỏi danh sách.', 'success');
             }
         };
         
-        // Global save function
         window.saveDataToFirebase = async function() {
             try {
-                await db.collection('appData').doc('currentData').set({
+                const dataToSave = {
                     orderData: orderData,
                     debtData: debtData,
                     overdueDrugs: overdueDrugs,
                     overdueNonDrugs: overdueNonDrugs,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                
+                if (db) {
+                    await db.collection('appData').doc('currentData').set({
+                        ...dataToSave,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
             } catch (error) {
-                console.error('Lỗi khi lưu dữ liệu lên Firebase:', error);
+                console.error('Lỗi khi lưu dữ liệu:', error);
+                const dataToSave = {
+                    orderData: orderData,
+                    debtData: debtData,
+                    overdueDrugs: overdueDrugs,
+                    overdueNonDrugs: overdueNonDrugs,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('congno_data', JSON.stringify(dataToSave));
             }
         };
     </script>

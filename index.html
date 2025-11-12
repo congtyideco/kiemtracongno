@@ -762,6 +762,13 @@
         </div>
     </div>
 
+    
+    <button id="analyze-btn" class="analyze-btn">LƯU & PHÂN TÍCH CÔNG NỢ</button> 
+    
+    <button id="save-cloud-btn" class="update-all-btn" style="background: #e67e22; margin-top: 15px; display: block; width: 300px; margin-left: auto; margin-right: auto; padding: 12px 30px;">
+        💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)
+    </button>
+</div>
     <div class="schedule-popup-overlay" id="report-popup">
         <div class="schedule-popup-content">
             <div class="schedule-popup-header">
@@ -795,17 +802,19 @@
         </div>
     </div>
 
-    <script>
+   <script>
     // Firebase configuration
     const firebaseConfig = {
-        apiKey: "AIzaSyA1tRoW4EwUVpLbaUU3jQznn_bxpsZ7LUA",
-        authDomain: "congno-91caf.firebaseapp.com",
-        projectId: "congno-91caf",
-        storageBucket: "congno-91caf.firebasestorage.app",
-        messagingSenderId: "31033034978",
-        appId: "1:31033034978:web:12beae974ea23719e736bb",
-        measurementId: "G-JKCC98KQDW"
-    };
+  apiKey: "AIzaSyB2Y6FHuD2U0r6CM1awIee8sOmUgjq57Ck",
+  authDomain: "game-162fc.firebaseapp.com",
+  databaseURL: "https://game-162fc-default-rtdb.firebaseio.com",
+  projectId: "game-162fc",
+  storageBucket: "game-162fc.firebasestorage.app",
+  messagingSenderId: "335841270990",
+  appId: "1:335841270990:web:0742c592b49d0fadd9c49f",
+  measurementId: "G-BB8ZL0WW2S"
+};
+
 
     // Initialize Firebase
     let db = null;
@@ -815,7 +824,6 @@
         console.log('Firebase initialized successfully');
     } catch (error) {
         console.error('Firebase initialization error:', error);
-        // db vẫn là null nếu có lỗi
     }
 
     // Biến toàn cục
@@ -850,15 +858,16 @@
         const resultsContainer = document.getElementById('results-container');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
+        const saveCloudBtn = document.getElementById('save-cloud-btn'); // Nút lưu Firebase mới
         
         // Control buttons
         const helpBtn = document.getElementById('help-btn');
         const deleteBtn = document.getElementById('delete-btn');
         const updateAllBtn = document.getElementById('update-all-btn');
-        const reportBtn = document.getElementById('report-btn'); // Nút kích hoạt popup báo cáo
+        const reportBtn = document.getElementById('report-btn'); 
         const helpPopup = document.getElementById('help-popup');
         const closePopup = document.getElementById('close-popup');
-        const reportPopup = document.getElementById('report-popup'); // Popup báo cáo
+        const reportPopup = document.getElementById('report-popup');
         const closeReportPopup = document.getElementById('close-report-popup');
         const readConfirmBtn = document.getElementById('read-confirm-btn');
         
@@ -883,15 +892,43 @@
                 readExcelFile(file, 'debt');
             }
         });
+
+        // Xử lý nút LƯU LÊN CLOUD (FIREBASE)
+        saveCloudBtn.addEventListener('click', async function() {
+            if (!orderData && !debtData && overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
+                showStatus('Không có dữ liệu để lưu lên Cloud.', 'info');
+                return;
+            }
+            
+            this.textContent = 'Đang lưu...';
+            this.disabled = true;
+
+            await saveDataToFirebase(true); // Ghi đè tham số 'forceCloudSave'
+
+            this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
+            this.disabled = false;
+        });
         
-        // Xử lý phân tích
-        analyzeBtn.addEventListener('click', function() {
+        // Xử lý nút LƯU & PHÂN TÍCH CÔNG NỢ
+        analyzeBtn.addEventListener('click', async function() {
             if (!orderData || !debtData) {
                 showStatus('Vui lòng chọn cả hai file Excel để phân tích.', 'error');
                 return;
             }
+
+            // 1. Phân tích dữ liệu (sẽ cập nhật dữ liệu cục bộ)
+            analyzeDebt(false); 
             
-            analyzeDebt();
+            // 2. Lưu dữ liệu đã phân tích lên Firebase
+            await saveDataToFirebase(true);
+
+            // 3. Hiển thị thông báo thành công
+            const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
+            if (totalOverdue === 0) {
+                showStatus('Phân tích và Lưu thành công! Không có công nợ quá hạn.', 'success');
+            } else {
+                showStatus(`Phân tích và Lưu thành công! Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
+            }
         });
         
         // Xử lý tab
@@ -959,23 +996,23 @@
             exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc');
         });
 
-        // Hàm khởi tạo ứng dụng - Đã chỉnh sửa để ưu tiên Firebase
+        // Hàm khởi tạo ứng dụng - Tải dữ liệu từ Firebase hoặc Local Storage
         async function initializeApp() {
             try {
                 // Ưu tiên tải từ Firebase
                 if (db) {
                     const loadedFromFirebase = await loadDataFromFirebase();
                     if (loadedFromFirebase) {
-                        showStatus('Đã tải dữ liệu mới nhất từ Firebase và ứng dụng sẵn sàng!', 'success');
+                        showStatus('Đã tải dữ liệu mới nhất từ Cloud (Firebase) và ứng dụng sẵn sàng!', 'success');
                     } else {
                         // Nếu Firebase không có dữ liệu, thử tải từ Local Storage
                         loadFromLocalStorage();
-                        showStatus('Chưa có dữ liệu trên Firebase. Đã tải dữ liệu Local (nếu có).', 'info');
+                        showStatus('Chưa có dữ liệu trên Cloud. Đã tải dữ liệu Local (nếu có).', 'info');
                     }
                 } else {
                     // Nếu không có Firebase (offline), tải từ Local Storage
                     loadFromLocalStorage();
-                    showStatus('Firebase không khả dụng (offline mode). Đã tải dữ liệu Local (nếu có).', 'info');
+                    showStatus('Firebase không khả dụng (offline mode). Đã tải dữ liệu Local (nếu có).', 'error');
                 }
 
                 // Bắt đầu kiểm tra popup sau khi tải dữ liệu
@@ -993,7 +1030,6 @@
         // Firebase functions - Đã chỉnh sửa để trả về trạng thái tải thành công
         async function loadDataFromFirebase() {
             if (!db) {
-                console.log('Firebase không khả dụng.');
                 return false;
             }
 
@@ -1071,8 +1107,8 @@
             }
         }
         
-        // Hàm lưu dữ liệu - Đã chỉnh sửa để luôn lưu vào Local Storage
-        async function saveDataToFirebase() {
+        // Hàm lưu dữ liệu - Đã chỉnh sửa logic để chỉ lưu Local khi upload file
+        async function saveDataToFirebase(forceCloudSave = false) {
             const dataToSave = {
                 orderData: orderData,
                 debtData: debtData,
@@ -1081,24 +1117,28 @@
                 lastUpdated: new Date().toISOString() // Dùng cho local storage
             };
             
-            // 1. Luôn lưu vào Local Storage (Ưu tiên)
+            // 1. Luôn lưu vào Local Storage 
             localStorage.setItem('congno_data', JSON.stringify(dataToSave));
             
-            // 2. Lưu lên Firebase nếu có kết nối
-            if (db) {
+            // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true)
+            if (db && forceCloudSave) {
                 try {
                     await db.collection('appData').doc('currentData').set({
                         ...dataToSave,
                         // Dùng FieldValue.serverTimestamp() cho Firebase để có timestamp chính xác
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp() 
                     });
+                    showStatus('✅ Dữ liệu đã được LƯU thành công lên Cloud (Firebase).', 'success');
                     console.log('Dữ liệu đã lưu lên Firebase và Local Storage');
                 } catch (error) {
+                    showStatus('❌ LỖI: Không thể lưu dữ liệu lên Cloud. Kiểm tra kết nối và quyền Firebase.', 'error');
                     console.error('Lỗi khi lưu dữ liệu lên Firebase:', error);
-                    console.log('Đã lưu vào Local Storage (offline mode)');
                 }
-            } else {
-                console.log('Dữ liệu đã lưu vào Local Storage (offline mode)');
+            } else if (db && !forceCloudSave) {
+                 console.log('Lưu cục bộ thành công. Bỏ qua lưu Cloud vì không gọi tường minh.');
+            }
+             else {
+                console.log('Đã lưu vào Local Storage (offline mode)');
             }
         }
         
@@ -1110,6 +1150,9 @@
                 // Xóa từ Firebase nếu có kết nối
                 if (db) {
                     await db.collection('appData').doc('currentData').delete();
+                    showStatus('Đã xóa toàn bộ dữ liệu trên Cloud và Local Storage.', 'success');
+                } else {
+                    showStatus('Đã xóa dữ liệu Local Storage. Firebase không khả dụng để xóa Cloud.', 'info');
                 }
                 
                 orderData = null;
@@ -1124,7 +1167,6 @@
                 document.getElementById('file-debt').value = '';
                 resultsContainer.style.display = 'none';
                 
-                showStatus('Đã xóa toàn bộ dữ liệu.', 'success');
             } catch (error) {
                 console.error('Lỗi khi xóa dữ liệu:', error);
                 showStatus('Lỗi khi xóa dữ liệu.', 'error');
@@ -1293,9 +1335,9 @@
                         updateFileStatus('debt-file-status', file.name, true);
                     }
                     
-                    // Tự động lưu khi upload file
-                    saveDataToFirebase();
-                    showStatus('File đã được tải lên và lưu thành công.', 'success');
+                    // CHỈ LƯU VÀO LOCAL STORAGE KHI UPLOAD FILE
+                    saveDataToFirebase(false); 
+                    showStatus('File đã được tải lên và lưu vào Local Storage thành công. Nhấn "LƯU DỮ LIỆU LÊN CLOUD" để đồng bộ.', 'info');
                 } catch (error) {
                     showStatus('Lỗi khi đọc file: ' + error.message, 'error');
                 }
@@ -1422,16 +1464,16 @@
                     }
                 }
                 
-                // Lưu dữ liệu
-                saveDataToFirebase();
+                // Lưu dữ liệu vào Local Storage (việc lưu lên Firebase sẽ do analyzeBtn xử lý)
+                saveDataToFirebase(false); 
                 displayResults(overdueDrugs, overdueNonDrugs);
                 
                 if (showStatusMessage) {
                     const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
                     if (totalOverdue === 0) {
-                        showStatus('Không có công nợ nào quá hạn thanh toán.', 'success');
+                        showStatus('Phân tích hoàn tất. Không có công nợ nào quá hạn thanh toán.', 'success');
                     } else {
-                        showStatus(`Đã tìm thấy ${totalOverdue} công nợ quá hạn (${overdueDrugs.length} thuốc, ${overdueNonDrugs.length} không phải thuốc).`, 'success');
+                        showStatus(`Phân tích hoàn tất. Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
                     }
                 }
                 
@@ -1674,9 +1716,10 @@
             });
             
             if (updated) {
-                saveDataToFirebase();
+                // Tự động lưu lên Firebase khi cập nhật toàn bộ
+                saveDataToFirebase(true); 
                 displayResults(overdueDrugs, overdueNonDrugs);
-                showStatus('Đã cập nhật số ngày quá hạn cho tất cả công nợ.', 'success');
+                showStatus('Đã cập nhật số ngày quá hạn cho tất cả công nợ và lưu lên Cloud.', 'success');
             } else {
                 showStatus('Không có thay đổi nào về số ngày quá hạn.', 'info');
             }
@@ -1742,7 +1785,8 @@
                 }
             }
             
-            window.saveDataToFirebase();
+            // Tự động lưu lên Firebase khi thay đổi trạng thái thanh toán
+            window.saveDataToFirebase(true); 
         }
     };
     
@@ -1753,7 +1797,8 @@
         if (itemIndex !== -1) {
             // Xóa khỏi mảng
             dataArray.splice(itemIndex, 1);
-            window.saveDataToFirebase();
+            // Tự động lưu lên Firebase khi xóa dòng
+            window.saveDataToFirebase(true); 
             
             // Xóa khỏi DOM (cách nhanh nhất)
             const row = document.getElementById(`row-${id}`);
@@ -1761,8 +1806,8 @@
         }
     };
     
-    // Hàm lưu toàn cục (Đã chỉnh sửa để luôn lưu vào Local Storage)
-    window.saveDataToFirebase = async function() {
+    // Hàm lưu toàn cục (Đã chỉnh sửa để yêu cầu flag forceCloudSave)
+    window.saveDataToFirebase = async function(forceCloudSave = false) {
         const dataToSave = {
             orderData: orderData,
             debtData: debtData,
@@ -1774,20 +1819,20 @@
         // 1. Luôn lưu vào Local Storage
         localStorage.setItem('congno_data', JSON.stringify(dataToSave));
         
-        // 2. Lưu lên Firebase nếu có kết nối
-        if (db) {
+        // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true)
+        if (db && forceCloudSave) {
             try {
                 await db.collection('appData').doc('currentData').set({
                     ...dataToSave,
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                console.log('Dữ liệu đã lưu lên Firebase (Global)');
+                console.log('Dữ liệu đã lưu lên Firebase (Global) thành công');
             } catch (error) {
                 console.error('Lỗi khi lưu dữ liệu lên Firebase (Global):', error);
-                console.log('Đã lưu vào Local Storage (offline mode - Global)');
+                // Bạn có thể giữ thông báo lỗi ở đây để debug
             }
         } else {
-            console.log('Đã lưu vào Local Storage (offline mode - Global)');
+             console.log('Đã lưu vào Local Storage (Global). Bỏ qua Cloud.');
         }
     };
 </script>

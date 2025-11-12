@@ -670,7 +670,11 @@
                 </div>
             </div>
             
-            <button id="analyze-btn" class="analyze-btn">Phân tích Công nợ</button>
+            <button id="analyze-btn" class="analyze-btn">LƯU & PHÂN TÍCH CÔNG NỢ</button>
+            
+            <button id="save-cloud-btn" class="update-all-btn" style="background: #e67e22; margin-top: 15px; display: block; width: 300px; margin-left: auto; margin-right: auto; padding: 12px 30px;">
+                💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)
+            </button>
         </div>
 
         <div id="status-message" class="status" style="display: none;"></div>
@@ -734,21 +738,20 @@
                     <ul>
                         <li>Nhấp vào "Chọn file Excel đơn hàng" và chọn file đơn hàng</li>
                         <li>Nhấp vào "Chọn file Excel công nợ" và chọn file công nợ</li>
-                        <li>Dữ liệu sẽ tự động lưu lên Firebase và đồng bộ đa thiết bị</li>
+                        <li>Dữ liệu sẽ được lưu **tạm thời vào Local Storage**.</li>
                     </ul>
                     
-                    <h3>3. Phân tích dữ liệu</h3>
-                    <ul>
-                        <li>Nhấp nút "Phân tích Công nợ" để bắt đầu xử lý</li>
-                        <li>Hệ thống sẽ so sánh dữ liệu giữa 2 file</li>
-                        <li>Kết quả sẽ hiển thị các công nợ đã quá hạn thanh toán</li>
+                    <h3>3. LƯU DỮ LIỆU LÊN CLOUD</h3>
+                     <ul>
+                        <li>Nhấn nút **💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)** để đồng bộ dữ liệu giữa các máy.</li>
+                        <li>Nhấn nút **LƯU & PHÂN TÍCH CÔNG NỢ** để lưu và xử lý dữ liệu cùng lúc.</li>
                     </ul>
                     
                     <h3>4. Quản lý công nợ</h3>
                     <ul>
-                        <li><strong>Đánh dấu đã thanh toán</strong>: Tick vào cột "Đã thanh toán" và nhấn "Cập nhật"</li>
-                        <li><strong>Cập nhật số ngày quá hạn</strong>: Nhấn nút "Cập nhật tất cả" để tính lại số ngày nợ</li>
-                        <li><strong>Xóa dữ liệu</strong>: Nhấn "Xóa dữ liệu" để xóa toàn bộ dữ liệu trên Firebase</li>
+                        <li><strong>Đánh dấu đã thanh toán</strong>: Tick vào cột "Đã thanh toán" và nhấn "Cập nhật" (Tự động lưu Cloud)</li>
+                        <li><strong>Cập nhật số ngày quá hạn</strong>: Nhấn nút "Cập nhật tất cả" (Tự động lưu Cloud)</li>
+                        <li><strong>Xóa dữ liệu</strong>: Nhấn "🗑️ Xóa dữ liệu" để xóa toàn bộ dữ liệu trên Firebase</li>
                     </ul>
                     
                     <h3>5. Xuất báo cáo</h3>
@@ -762,13 +765,6 @@
         </div>
     </div>
 
-    
-    <button id="analyze-btn" class="analyze-btn">LƯU & PHÂN TÍCH CÔNG NỢ</button> 
-    
-    <button id="save-cloud-btn" class="update-all-btn" style="background: #e67e22; margin-top: 15px; display: block; width: 300px; margin-left: auto; margin-right: auto; padding: 12px 30px;">
-        💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)
-    </button>
-</div>
     <div class="schedule-popup-overlay" id="report-popup">
         <div class="schedule-popup-content">
             <div class="schedule-popup-header">
@@ -803,18 +799,17 @@
     </div>
 
    <script>
-    // Firebase configuration
+    // Firebase configuration (Sử dụng cấu hình từ file kiemtracongnoiGEMININ.html)
     const firebaseConfig = {
-  apiKey: "AIzaSyB2Y6FHuD2U0r6CM1awIee8sOmUgjq57Ck",
-  authDomain: "game-162fc.firebaseapp.com",
-  databaseURL: "https://game-162fc-default-rtdb.firebaseio.com",
-  projectId: "game-162fc",
-  storageBucket: "game-162fc.firebasestorage.app",
-  messagingSenderId: "335841270990",
-  appId: "1:335841270990:web:0742c592b49d0fadd9c49f",
-  measurementId: "G-BB8ZL0WW2S"
-};
-
+      apiKey: "AIzaSyB2Y6FHuD2U0r6CM1awIee8sOmUgjq57Ck",
+      authDomain: "game-162fc.firebaseapp.com",
+      databaseURL: "https://game-162fc-default-rtdb.firebaseio.com",
+      projectId: "game-162fc",
+      storageBucket: "game-162fc.firebasestorage.app",
+      messagingSenderId: "335841270990",
+      appId: "1:335841270990:web:0742c592b49d0fadd9c49f",
+      measurementId: "G-BB8ZL0WW2S"
+    };
 
     // Initialize Firebase
     let db = null;
@@ -834,10 +829,9 @@
     
     // === CẤU HÌNH POPUP TỰ ĐỘNG - ĐƠN GIẢN HÓA ===
     const autoPopupConfig = {
-        // Thêm Chủ nhật (0) để đảm bảo kiểm tra hoạt động trên mọi ngày
         targetWeekdays: [0, 1, 2, 3, 4, 5, 6], 
         openTimes: [
-            {hour: 9, minute: 11}, // <-- Đặt giờ phút TEST mới (ví dụ 9:10 AM)
+            {hour: 9, minute: 11}, 
             {hour: 16, minute: 30}
         ],
     };
@@ -858,7 +852,7 @@
         const resultsContainer = document.getElementById('results-container');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
-        const saveCloudBtn = document.getElementById('save-cloud-btn'); // Nút lưu Firebase mới
+        const saveCloudBtn = document.getElementById('save-cloud-btn'); 
         
         // Control buttons
         const helpBtn = document.getElementById('help-btn');
@@ -1829,7 +1823,7 @@
                 console.log('Dữ liệu đã lưu lên Firebase (Global) thành công');
             } catch (error) {
                 console.error('Lỗi khi lưu dữ liệu lên Firebase (Global):', error);
-                // Bạn có thể giữ thông báo lỗi ở đây để debug
+                // Lỗi ghi vào console
             }
         } else {
              console.log('Đã lưu vào Local Storage (Global). Bỏ qua Cloud.');

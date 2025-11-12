@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        /* ... (CSS được giữ nguyên) ... */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -693,9 +692,31 @@
         .schedule-table-container::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        .sync-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .sync-status.online {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .sync-status.offline {
+            background: #e74c3c;
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <div id="sync-status" class="sync-status" style="display: none;"></div>
+
     <div class="container">
         <div class="header">
             <h1>Ứng dụng Kiểm soát Công nợ</h1>
@@ -903,14 +924,19 @@
             measurementId: "G-JKCC98KQDW"
         };
 
-        // Initialize Firebase với error handling
+        // Initialize Firebase
         let db;
+        let firebaseInitialized = false;
+        
         try {
             const app = firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            firebaseInitialized = true;
             console.log('Firebase initialized successfully');
+            updateSyncStatus(true);
         } catch (error) {
             console.error('Firebase initialization error:', error);
+            updateSyncStatus(false);
         }
 
         // Biến toàn cục
@@ -919,24 +945,39 @@
         let overdueDrugs = [];
         let overdueNonDrugs = [];
         
-        // Biến cho lịch trình (Đã cập nhật mặc định)
+        // Biến cho lịch trình
         let scheduleSettings = {
             enabled: true,
-            monday: { enabled: true, time: "08:30" }, // data-day="1"
-            tuesday: { enabled: true, time: "09:00" }, // data-day="2"
-            wednesday: { enabled: true, time: "09:00" }, // data-day="3"
-            thursday: { enabled: true, time: "09:00" }, // data-day="4"
-            friday: { enabled: true, time: "08:30" }, // data-day="5"
-            saturday: { enabled: true, time: "08:00" }, // data-day="6"
-            sunday: { enabled: true, time: "09:00" } // data-day="0"
+            monday: { enabled: true, time: "08:30" },
+            tuesday: { enabled: true, time: "09:00" },
+            wednesday: { enabled: true, time: "09:00" },
+            thursday: { enabled: true, time: "09:00" },
+            friday: { enabled: true, time: "08:30" },
+            saturday: { enabled: true, time: "08:00" },
+            sunday: { enabled: true, time: "09:00" }
         };
 
         let scheduleCheckInterval = null;
+        let unsubscribeFirestore = null;
         
-        // Định nghĩa các chỉ số cột toàn cục (dựa trên file gốc)
+        // Định nghĩa các chỉ số cột toàn cục
         const invoiceIndex = 3;
         const debtAmountDebtIndex = 5;
         const paymentDueDebtIndex = 6;
+
+        // Hàm cập nhật trạng thái đồng bộ
+        function updateSyncStatus(online) {
+            const syncStatus = document.getElementById('sync-status');
+            if (online) {
+                syncStatus.textContent = '🟢 Đang đồng bộ với Firebase';
+                syncStatus.className = 'sync-status online';
+                syncStatus.style.display = 'block';
+            } else {
+                syncStatus.textContent = '🔴 Đang chạy offline';
+                syncStatus.className = 'sync-status offline';
+                syncStatus.style.display = 'block';
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             const fileOrderInput = document.getElementById('file-order');
@@ -965,7 +1006,7 @@
             const exportDrugsBtn = document.getElementById('export-drugs');
             const exportNonDrugsBtn = document.getElementById('export-non-drugs');
             
-            // Tải dữ liệu từ Firebase khi khởi động
+            // Khởi tạo ứng dụng
             initializeApp();
 
             // Xử lý sự kiện file upload
@@ -1039,7 +1080,6 @@
                 saveScheduleSettings();
             });
 
-            // Sự kiện Kiểm tra Ngay
             testScheduleBtn.addEventListener('click', function() {
                 showSchedulePopup();
                 showStatus('Đã hiển thị báo cáo kiểm tra ngay.', 'info');
@@ -1073,24 +1113,72 @@
             // Hàm khởi tạo ứng dụng
             async function initializeApp() {
                 try {
-                    if (!db) {
-                        showStatus('Firebase chưa được khởi tạo. Ứng dụng sẽ chạy ở chế độ offline.', 'info');
-                        // Tải cài đặt lịch trình từ local ngay cả khi offline
-                        await loadScheduleSettings(); 
-                        loadFromLocalStorage();
-                        // Bắt đầu kiểm tra lịch trình (dựa trên local settings)
-                        startScheduleChecker();
-                        return;
-                    }
-                    
                     await loadDataFromFirebase();
                     await loadScheduleSettings();
-                    startScheduleChecker(); // Bắt đầu kiểm tra lịch trình
-                    showStatus('Ứng dụng đã sẵn sàng!', 'success');
+                    startScheduleChecker();
+                    startRealTimeSync(); // Bắt đầu đồng bộ thời gian thực
+                    showStatus('Ứng dụng đã sẵn sàng! Dữ liệu đang được đồng bộ.', 'success');
                 } catch (error) {
                     console.error('Lỗi khởi tạo ứng dụng:', error);
-                    showStatus('Lỗi khởi tạo ứng dụng. Kiểm tra kết nối internet.', 'error');
+                    showStatus('Ứng dụng đã sẵn sàng (chế độ offline).', 'info');
                 }
+            }
+
+            // Bắt đầu đồng bộ thời gian thực với Firebase
+            function startRealTimeSync() {
+                if (!db) {
+                    console.log('Firebase không khả dụng, không thể bật đồng bộ thời gian thực');
+                    return;
+                }
+
+                try {
+                    // Lắng nghe thay đổi từ Firebase
+                    unsubscribeFirestore = db.collection('appData').doc('currentData')
+                        .onSnapshot(function(snapshot) {
+                            if (snapshot.exists) {
+                                const data = snapshot.data();
+                                console.log('Nhận dữ liệu cập nhật từ Firebase');
+                                
+                                // Chỉ cập nhật nếu dữ liệu mới hơn
+                                const localLastUpdated = localStorage.getItem('congno_lastUpdated');
+                                const remoteLastUpdated = data.lastUpdated;
+                                
+                                if (!localLastUpdated || new Date(remoteLastUpdated) > new Date(localLastUpdated)) {
+                                    processIncomingData(data);
+                                }
+                            }
+                        }, function(error) {
+                            console.error('Lỗi đồng bộ thời gian thực:', error);
+                        });
+                } catch (error) {
+                    console.error('Lỗi khi khởi tạo đồng bộ thời gian thực:', error);
+                }
+            }
+
+            // Xử lý dữ liệu đến từ Firebase
+            function processIncomingData(data) {
+                orderData = data.orderData || null;
+                debtData = data.debtData || null;
+                overdueDrugs = data.overdueDrugs || [];
+                overdueNonDrugs = data.overdueNonDrugs || [];
+                
+                // Cập nhật UI
+                updateFileStatusFromData();
+                
+                if (orderData && debtData) {
+                    // Hiển thị kết quả hiện tại
+                    displayResults(overdueDrugs, overdueNonDrugs);
+                } else if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
+                    // Hiển thị kết quả cũ nếu có
+                    displayResults(overdueDrugs, overdueNonDrugs);
+                }
+                
+                // Cập nhật thời gian cuối cùng
+                if (data.lastUpdated) {
+                    localStorage.setItem('congno_lastUpdated', data.lastUpdated);
+                }
+                
+                showStatus('Đã cập nhật dữ liệu từ hệ thống.', 'info');
             }
 
             // Firebase functions
@@ -1105,18 +1193,7 @@
                     const snapshot = await db.collection('appData').doc('currentData').get();
                     if (snapshot.exists) {
                         const data = snapshot.data();
-                        orderData = data.orderData || null;
-                        debtData = data.debtData || null;
-                        overdueDrugs = data.overdueDrugs || [];
-                        overdueNonDrugs = data.overdueNonDrugs || [];
-                        
-                        // Cập nhật UI
-                        updateFileStatusFromData();
-                        
-                        if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
-                            displayResults(overdueDrugs, overdueNonDrugs);
-                        }
-                        
+                        processIncomingData(data);
                         console.log('Đã tải dữ liệu từ Firebase');
                     } else {
                         console.log('Chưa có dữ liệu trên Firebase');
@@ -1153,16 +1230,15 @@
 
             function updateFileStatusFromData() {
                 if (orderData) {
-                    updateFileStatus('order-file-status', 'File đã tải từ lưu trữ', true);
+                    updateFileStatus('order-file-status', 'File đã tải từ hệ thống', true);
                 }
                 if (debtData) {
-                    updateFileStatus('debt-file-status', 'File đã tải từ lưu trữ', true);
+                    updateFileStatus('debt-file-status', 'File đã tải từ hệ thống', true);
                 }
             }
             
             async function saveDataToFirebase() {
                 try {
-                    // Lưu vào Local Storage trước
                     const dataToSave = {
                         orderData: orderData,
                         debtData: debtData,
@@ -1171,17 +1247,21 @@
                         lastUpdated: new Date().toISOString()
                     };
                     
+                    // Luôn lưu vào Local Storage
                     localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                    localStorage.setItem('congno_lastUpdated', dataToSave.lastUpdated);
                     
-                    // Sau đó lưu lên Firebase nếu có kết nối
+                    // Lưu lên Firebase nếu có kết nối
                     if (db) {
                         await db.collection('appData').doc('currentData').set({
                             ...dataToSave,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         console.log('Dữ liệu đã lưu lên Firebase và Local Storage');
+                        showStatus('Dữ liệu đã được lưu và đồng bộ!', 'success');
                     } else {
                         console.log('Dữ liệu đã lưu vào Local Storage (offline mode)');
+                        showStatus('Dữ liệu đã lưu (chế độ offline)', 'info');
                     }
                 } catch (error) {
                     console.error('Lỗi khi lưu dữ liệu:', error);
@@ -1194,13 +1274,21 @@
                         lastUpdated: new Date().toISOString()
                     };
                     localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                    localStorage.setItem('congno_lastUpdated', dataToSave.lastUpdated);
+                    showStatus('Dữ liệu đã lưu cục bộ (lỗi kết nối)', 'warning');
                 }
             }
             
             async function deleteAllData() {
                 try {
+                    // Hủy đăng ký lắng nghe thời gian thực
+                    if (unsubscribeFirestore) {
+                        unsubscribeFirestore();
+                    }
+                    
                     // Xóa từ Local Storage
                     localStorage.removeItem('congno_data');
+                    localStorage.removeItem('congno_lastUpdated');
                     
                     // Xóa từ Firebase nếu có kết nối
                     if (db) {
@@ -1219,6 +1307,9 @@
                     document.getElementById('file-debt').value = '';
                     resultsContainer.style.display = 'none';
                     
+                    // Khởi động lại đồng bộ thời gian thực
+                    startRealTimeSync();
+                    
                     showStatus('Đã xóa toàn bộ dữ liệu.', 'success');
                 } catch (error) {
                     console.error('Lỗi khi xóa dữ liệu:', error);
@@ -1226,7 +1317,7 @@
                 }
             }
 
-            // --- Firebase functions for schedule (ĐÃ CẢI TIẾN) ---
+            // --- Firebase functions for schedule ---
             async function loadScheduleSettings() {
                 try {
                     if (!db) {
@@ -1276,7 +1367,6 @@
                         }
                     });
 
-                    // Đảm bảo scheduleSettings được bật
                     scheduleSettings.enabled = true;
 
                     // Lưu vào Local Storage
@@ -1289,7 +1379,7 @@
 
                     showStatus('Đã lưu cài đặt lịch trình!', 'success');
                     calculateNextSchedule();
-                    startScheduleChecker(); // Khởi động lại checker với cài đặt mới
+                    startScheduleChecker();
 
                 } catch (error) {
                     console.error('Lỗi khi lưu cài đặt lịch trình:', error);
@@ -1316,9 +1406,7 @@
                 return days[dayNumber];
             }
 
-            // CẢI TIẾN: Căn chỉnh thời gian kiểm tra vào đầu phút (giây 00)
             function startScheduleChecker() {
-                // Xóa interval cũ nếu có
                 if (scheduleCheckInterval) {
                     clearInterval(scheduleCheckInterval);
                 }
@@ -1329,45 +1417,37 @@
                 }
 
                 const now = new Date();
-                // Tính toán thời gian còn lại đến giây số 00 của phút kế tiếp
                 const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
                 
                 console.log(`Kiểm tra lịch trình lần đầu sau ${msUntilNextMinute / 1000} giây.`);
 
-                // Chạy lần kiểm tra đầu tiên sau khi căn chỉnh
                 setTimeout(() => {
                     checkSchedule();
                     
-                    // Sau lần kiểm tra đầu tiên, thiết lập interval chạy đều đặn mỗi phút
                     scheduleCheckInterval = setInterval(() => {
                         checkSchedule();
-                    }, 60000); // 60000 ms = 1 phút
+                    }, 60000);
                 }, msUntilNextMinute);
             }
 
-            // CẢI TIẾN: Logic kiểm tra thời gian
             function checkSchedule() {
                 if (!scheduleSettings.enabled) {
                     return;
                 }
                 
                 const now = new Date();
-                const currentDay = now.getDay(); // 0 (Chủ nhật) - 6 (Thứ 7)
-                // Lấy thời gian hiện tại dưới dạng HH:mm
+                const currentDay = now.getDay();
                 const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 const currentDate = now.toDateString();
 
-                // 1. Kiểm tra xem đã đọc báo cáo hôm nay hay chưa
                 const lastRead = localStorage.getItem('lastScheduleRead');
                 if (lastRead === currentDate) {
                     return; 
                 }
 
-                // 2. Kiểm tra xem có lịch trình nào khớp với ngày và giờ hiện tại không
                 const dayName = getDayName(currentDay);
                 const daySchedule = scheduleSettings[dayName];
                 
-                // Nếu lịch trình được bật và giờ khớp chính xác
                 if (daySchedule && daySchedule.enabled && daySchedule.time === currentTime) {
                     console.log(`Lịch trình kích hoạt: ${dayName} lúc ${currentTime}`);
                     showSchedulePopup();
@@ -1459,11 +1539,10 @@
                 container.innerHTML = html;
             }
 
-            // CẢI TIẾN: Logic tính toán lịch trình kế tiếp (tìm thời điểm gần nhất)
             function calculateNextSchedule() {
                 const now = new Date();
                 let nextScheduleTime = null;
-                let minDiff = Infinity; // Khoảng thời gian nhỏ nhất (tính bằng mili giây)
+                let minDiff = Infinity;
 
                 for (let i = 0; i < 7; i++) {
                     const checkDate = new Date(now);
@@ -1475,12 +1554,10 @@
                     if (daySchedule && daySchedule.enabled) {
                         const [hours, minutes] = daySchedule.time.split(':').map(Number);
                         const scheduleTime = new Date(checkDate);
-                        // Thiết lập giờ và phút cho ngày kiểm tra, giây và mili giây bằng 0
-                        scheduleTime.setHours(hours, minutes, 0, 0); 
+                        scheduleTime.setHours(hours, minutes, 0, 0);
                         
                         const diff = scheduleTime.getTime() - now.getTime();
                         
-                        // Nếu lịch trình này trong tương lai (diff > 0) và gần hơn lịch trình đã tìm thấy
                         if (diff > 0 && diff < minDiff) {
                             minDiff = diff;
                             nextScheduleTime = scheduleTime;
@@ -1508,13 +1585,12 @@
                 scheduleSettings.enabled = false;
                 saveScheduleSettings();
                 showStatus('Đã tắt tính năng hiển thị tự động. Lịch trình đã lưu vẫn còn.', 'success');
-                // Dừng hẳn việc kiểm tra
                 if (scheduleCheckInterval) {
                     clearInterval(scheduleCheckInterval);
                 }
             }
             
-            // Hàm đọc file Excel
+            // Hàm đọc file Excel - ĐÃ SỬA ĐỂ TỰ ĐỘNG PHÂN TÍCH
             function readExcelFile(file, type) {
                 const reader = new FileReader();
                 
@@ -1534,9 +1610,14 @@
                             updateFileStatus('debt-file-status', file.name, true);
                         }
                         
-                        // Tự động lưu khi upload file
-                        saveDataToFirebase();
-                        showStatus('File đã được tải lên và lưu thành công.', 'success');
+                        // TỰ ĐỘNG PHÂN TÍCH VÀ LƯU KHI UPLOAD FILE
+                        if (orderData && debtData) {
+                            analyzeDebt(); // Tự động phân tích khi có đủ 2 file
+                        } else {
+                            saveDataToFirebase(); // Vẫn lưu file đã upload
+                            showStatus('File đã được tải lên. Vui lòng tải lên file còn lại để phân tích.', 'info');
+                        }
+                        
                     } catch (error) {
                         showStatus('Lỗi khi đọc file: ' + error.message, 'error');
                     }
@@ -1989,6 +2070,7 @@
                 };
                 
                 localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                localStorage.setItem('congno_lastUpdated', dataToSave.lastUpdated);
                 
                 if (db) {
                     await db.collection('appData').doc('currentData').set({
@@ -2006,6 +2088,7 @@
                     lastUpdated: new Date().toISOString()
                 };
                 localStorage.setItem('congno_data', JSON.stringify(dataToSave));
+                localStorage.setItem('congno_lastUpdated', dataToSave.lastUpdated);
             }
         };
     </script>

@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        /* CSS được giữ nguyên */
+        /* CSS được giữ nguyên từ file gốc */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -799,27 +799,30 @@
     </div>
 
    <script>
-    // Firebase configuration (Sử dụng cấu hình từ file kiemtracongnoiGEMININ.html)
- const firebaseConfig = {
-  apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
-  authDomain: "notebook-d469b.firebaseapp.com",
-  databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
-  projectId: "notebook-d469b",
-  storageBucket: "notebook-d469b.firebasestorage.app",
-  messagingSenderId: "835830453697",
-  appId: "1:835830453697:web:ba485de6c981e72fe00b40",
-  measurementId: "G-P79X8EXF3G"
-};
-
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
+        authDomain: "notebook-d469b.firebaseapp.com",
+        databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
+        projectId: "notebook-d469b",
+        storageBucket: "notebook-d469b.firebasestorage.app",
+        messagingSenderId: "835830453697",
+        appId: "1:835830453697:web:ba485de6c981e72fe00b40",
+        measurementId: "G-P79X8EXF3G"
+    };
 
     // Initialize Firebase
     let db = null;
+    let firebaseInitialized = false;
+    
     try {
         const app = firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
+        firebaseInitialized = true;
         console.log('Firebase initialized successfully');
     } catch (error) {
         console.error('Firebase initialization error:', error);
+        firebaseInitialized = false;
     }
 
     // Biến toàn cục
@@ -836,7 +839,6 @@
             {hour: 16, minute: 30}
         ],
     };
-    // ===========================================
 
     let popupCheckInterval = null; 
     
@@ -895,12 +897,18 @@
                 return;
             }
             
+            const originalText = this.textContent;
             this.textContent = 'Đang lưu...';
             this.disabled = true;
 
-            await saveDataToFirebase(true); // Ghi đè tham số 'forceCloudSave'
+            try {
+                await saveDataToFirebase(true);
+                showStatus('✅ Dữ liệu đã được LƯU thành công lên Cloud (Firebase).', 'success');
+            } catch (error) {
+                showStatus('❌ LỖI: Không thể lưu dữ liệu lên Cloud. Kiểm tra kết nối và quyền Firebase.', 'error');
+            }
 
-            this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
+            this.textContent = originalText;
             this.disabled = false;
         });
         
@@ -915,14 +923,16 @@
             analyzeDebt(false); 
             
             // 2. Lưu dữ liệu đã phân tích lên Firebase
-            await saveDataToFirebase(true);
-
-            // 3. Hiển thị thông báo thành công
-            const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
-            if (totalOverdue === 0) {
-                showStatus('Phân tích và Lưu thành công! Không có công nợ quá hạn.', 'success');
-            } else {
-                showStatus(`Phân tích và Lưu thành công! Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
+            try {
+                await saveDataToFirebase(true);
+                const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
+                if (totalOverdue === 0) {
+                    showStatus('Phân tích và Lưu thành công! Không có công nợ quá hạn.', 'success');
+                } else {
+                    showStatus(`Phân tích và Lưu thành công! Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
+                }
+            } catch (error) {
+                showStatus('Phân tích thành công nhưng không thể lưu lên Cloud. Kiểm tra kết nối.', 'error');
             }
         });
         
@@ -995,7 +1005,7 @@
         async function initializeApp() {
             try {
                 // Ưu tiên tải từ Firebase
-                if (db) {
+                if (firebaseInitialized) {
                     const loadedFromFirebase = await loadDataFromFirebase();
                     if (loadedFromFirebase) {
                         showStatus('Đã tải dữ liệu mới nhất từ Cloud (Firebase) và ứng dụng sẵn sàng!', 'success');
@@ -1024,7 +1034,7 @@
 
         // Firebase functions - Đã chỉnh sửa để trả về trạng thái tải thành công
         async function loadDataFromFirebase() {
-            if (!db) {
+            if (!firebaseInitialized || !db) {
                 return false;
             }
 
@@ -1102,39 +1112,42 @@
             }
         }
         
-        // Hàm lưu dữ liệu - Đã chỉnh sửa logic để chỉ lưu Local khi upload file
+        // Hàm lưu dữ liệu - ĐÃ SỬA LỖI QUAN TRỌNG
         async function saveDataToFirebase(forceCloudSave = false) {
             const dataToSave = {
                 orderData: orderData,
                 debtData: debtData,
                 overdueDrugs: overdueDrugs,
                 overdueNonDrugs: overdueNonDrugs,
-                lastUpdated: new Date().toISOString() // Dùng cho local storage
+                lastUpdated: new Date().toISOString()
             };
             
             // 1. Luôn lưu vào Local Storage 
             localStorage.setItem('congno_data', JSON.stringify(dataToSave));
             
-            // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true)
-            if (db && forceCloudSave) {
+            // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true) và Firebase khả dụng
+            if (firebaseInitialized && db && forceCloudSave) {
                 try {
+                    // Sửa lỗi: Đảm bảo dữ liệu được lưu đúng định dạng
                     await db.collection('appData').doc('currentData').set({
-                        ...dataToSave,
-                        // Dùng FieldValue.serverTimestamp() cho Firebase để có timestamp chính xác
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp() 
+                        orderData: orderData,
+                        debtData: debtData,
+                        overdueDrugs: overdueDrugs,
+                        overdueNonDrugs: overdueNonDrugs,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    showStatus('✅ Dữ liệu đã được LƯU thành công lên Cloud (Firebase).', 'success');
                     console.log('Dữ liệu đã lưu lên Firebase và Local Storage');
+                    return true;
                 } catch (error) {
-                    showStatus('❌ LỖI: Không thể lưu dữ liệu lên Cloud. Kiểm tra kết nối và quyền Firebase.', 'error');
                     console.error('Lỗi khi lưu dữ liệu lên Firebase:', error);
+                    throw error; // Ném lỗi để xử lý ở nơi gọi
                 }
             } else if (db && !forceCloudSave) {
-                 console.log('Lưu cục bộ thành công. Bỏ qua lưu Cloud vì không gọi tường minh.');
-            }
-             else {
+                console.log('Lưu cục bộ thành công. Bỏ qua lưu Cloud vì không gọi tường minh.');
+            } else {
                 console.log('Đã lưu vào Local Storage (offline mode)');
             }
+            return true;
         }
         
         async function deleteAllData() {
@@ -1143,7 +1156,7 @@
                 localStorage.removeItem('congno_data');
                 
                 // Xóa từ Firebase nếu có kết nối
-                if (db) {
+                if (firebaseInitialized && db) {
                     await db.collection('appData').doc('currentData').delete();
                     showStatus('Đã xóa toàn bộ dữ liệu trên Cloud và Local Storage.', 'success');
                 } else {
@@ -1168,7 +1181,7 @@
             }
         }
 
-        // --- Logic Popup Tự động ĐÃ TỐI ƯU CỰC ĐẠI ---
+        // --- Logic Popup Tự động ---
         function startPopupChecker() {
             if (popupCheckInterval) {
                 clearInterval(popupCheckInterval);
@@ -1193,7 +1206,6 @@
             const currentDateStr = now.toDateString();
             const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
-
             // 1. Kiểm tra xem popup đã xuất hiện trong ngày và được "Đã đọc" chưa
             const lastRead = localStorage.getItem('lastReportRead');
             if (lastRead === currentDateStr) {
@@ -1210,9 +1222,8 @@
                 time.hour === currentHour && time.minute === currentMinute
             );
 
-            // Ghi nhật ký trạng thái hiện tại (Dùng Console để xác nhận thành công)
+            // Ghi nhật ký trạng thái hiện tại
             console.log(`[Popup Auto - ${currentTimeStr}] Ngày: ${currentDay}. Mục tiêu: ${JSON.stringify(autoPopupConfig.openTimes)}. Kết quả: ${isTargetTime ? 'KÍCH HOẠT' : 'Bỏ qua'}`);
-
 
             if (isTargetTime) {
                 showReportPopup();
@@ -1308,7 +1319,7 @@
             html += `</tbody></table>`;
             container.innerHTML = html;
         }
-        // --- Hết Logic Popup Tự động ĐÃ TỐI ƯU CỰC ĐẠI ---
+        // --- Hết Logic Popup Tự động ---
         
         // Hàm đọc file Excel
         function readExcelFile(file, type) {
@@ -1762,7 +1773,7 @@
         }
     });
     
-    // Global functions for event handlers (cần được giữ lại)
+    // Global functions for event handlers
     window.togglePaidStatus = function(id, isPaid, type) {
         let dataArray = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
         const item = dataArray.find(item => item.id === id);
@@ -1801,7 +1812,7 @@
         }
     };
     
-    // Hàm lưu toàn cục (Đã chỉnh sửa để yêu cầu flag forceCloudSave)
+    // Hàm lưu toàn cục - ĐÃ SỬA LỖI
     window.saveDataToFirebase = async function(forceCloudSave = false) {
         const dataToSave = {
             orderData: orderData,
@@ -1814,20 +1825,25 @@
         // 1. Luôn lưu vào Local Storage
         localStorage.setItem('congno_data', JSON.stringify(dataToSave));
         
-        // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true)
-        if (db && forceCloudSave) {
+        // 2. Lưu lên Firebase CHỈ KHI được gọi tường minh (forceCloudSave = true) và Firebase khả dụng
+        if (firebaseInitialized && db && forceCloudSave) {
             try {
                 await db.collection('appData').doc('currentData').set({
-                    ...dataToSave,
+                    orderData: orderData,
+                    debtData: debtData,
+                    overdueDrugs: overdueDrugs,
+                    overdueNonDrugs: overdueNonDrugs,
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 console.log('Dữ liệu đã lưu lên Firebase (Global) thành công');
+                return true;
             } catch (error) {
                 console.error('Lỗi khi lưu dữ liệu lên Firebase (Global):', error);
-                // Lỗi ghi vào console
+                throw error;
             }
         } else {
-             console.log('Đã lưu vào Local Storage (Global). Bỏ qua Cloud.');
+            console.log('Đã lưu vào Local Storage (Global). Bỏ qua Cloud.');
+            return true;
         }
     };
 </script>

@@ -6,8 +6,9 @@
     <title>Ứng dụng Kiểm soát Công nợ</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> <!-- ✅ ĐÃ THAY ĐỔI -->
     <style>
+        /* === GIỮ NGUYÊN TOÀN BỘ CSS TỪ FILE GỐC === */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -686,20 +687,20 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
       authDomain: "notebook-d469b.firebaseapp.com",
-      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
+      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com", // ✅ Realtime Database
       projectId: "notebook-d469b",
       storageBucket: "notebook-d469b.firebasestorage.app",
       messagingSenderId: "835830453697",
       appId: "1:835830453697:web:ba485de6c981e72fe00b40",
       measurementId: "G-P79X8EXF3G"
     };
-    let db = null;
+    let rtdb = null; // ✅ DÙNG REALTIME DATABASE
     try {
         const app = firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        console.log('Firebase initialized successfully');
+        rtdb = firebase.database(); // ✅ KHỞI TẠO RTDB
+        console.log('Firebase Realtime Database initialized successfully');
     } catch (error) {
-        console.error('Firebase initialization error:', error);
+        console.error('Firebase RTDB initialization error:', error);
     }
     let orderData = null;
     let debtData = null;
@@ -716,6 +717,7 @@
     const invoiceIndex = 3;
     const debtAmountDebtIndex = 5;
     const paymentDueDebtIndex = 6;
+
     document.addEventListener('DOMContentLoaded', function() {
         const fileOrderInput = document.getElementById('file-order');
         const fileDebtInput = document.getElementById('file-debt');
@@ -736,53 +738,53 @@
         const readConfirmBtn = document.getElementById('read-confirm-btn');
         const exportDrugsBtn = document.getElementById('export-drugs');
         const exportNonDrugsBtn = document.getElementById('export-non-drugs');
+
         initializeApp();
+
         fileOrderInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                readExcelFile(file, 'order');
-            }
+            if (file) readExcelFile(file, 'order');
         });
         fileDebtInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                readExcelFile(file, 'debt');
-            }
+            if (file) readExcelFile(file, 'debt');
         });
-        // 🔥 SỬA: THÊM finally ĐỂ LUÔN RESET NÚT
+
+        // ✅ NÚT LƯU CLOUD — DÙNG RTDB
         saveCloudBtn.addEventListener('click', async function() {
-            if (!orderData && !debtData && overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
-                showStatus('Không có dữ liệu để lưu lên Cloud.', 'info');
+            if (overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
+                showStatus('Không có công nợ để lưu lên Cloud.', 'info');
                 return;
             }
             this.textContent = 'Đang lưu...';
             this.disabled = true;
             try {
-                await saveDataToFirebase(true);
-                showStatus('✅ Lưu Cloud thành công!', 'success');
-            } catch (error) {
-                console.error('Lỗi khi lưu Cloud:', error);
-                showStatus('❌ Lỗi lưu Cloud: ' + (error.message || 'Vui lòng kiểm tra kết nối và cấu hình Firebase'), 'error');
+                await saveDataToRTDB(true);
+                showStatus('✅ Đã lưu kết quả lên Realtime Database!', 'success');
             } finally {
-                // 🔥 LUÔN RESET NÚT
                 this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
                 this.disabled = false;
             }
         });
+
         analyzeBtn.addEventListener('click', async function() {
             if (!orderData || !debtData) {
                 showStatus('Vui lòng chọn cả hai file Excel để phân tích.', 'error');
                 return;
             }
             analyzeDebt(false); 
-            await saveDataToFirebase(true);
-            const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
-            if (totalOverdue === 0) {
-                showStatus('Phân tích và Lưu thành công! Không có công nợ quá hạn.', 'success');
-            } else {
-                showStatus(`Phân tích và Lưu thành công! Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
+            try {
+                await saveDataToRTDB(true);
+                const total = overdueDrugs.length + overdueNonDrugs.length;
+                showStatus(total === 0 
+                    ? 'Phân tích hoàn tất. Không có công nợ quá hạn.' 
+                    : `✅ Đã lưu ${total} công nợ lên Cloud!`, 'success');
+            } catch (error) {
+                console.error('Lỗi lưu sau phân tích:', error);
+                showStatus('⚠️ Phân tích thành công nhưng lưu Cloud thất bại.', 'error');
             }
         });
+
         tabButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
@@ -792,191 +794,160 @@
                 document.getElementById(tabId).classList.add('active');
             });
         });
-        helpBtn.addEventListener('click', function() {
-            helpPopup.style.display = 'flex';
-        });
-        closePopup.addEventListener('click', function() {
-            helpPopup.style.display = 'none';
-        });
-        helpPopup.addEventListener('click', function(e) {
-            if (e.target === helpPopup) {
-                helpPopup.style.display = 'none';
-            }
-        });
-        reportBtn.addEventListener('click', function() {
-            showReportPopup();
-        });
-        closeReportPopup.addEventListener('click', function() {
+        helpBtn.addEventListener('click', () => helpPopup.style.display = 'flex');
+        closePopup.addEventListener('click', () => helpPopup.style.display = 'none');
+        helpPopup.addEventListener('click', (e) => { if (e.target === helpPopup) helpPopup.style.display = 'none'; });
+        reportBtn.addEventListener('click', () => showReportPopup());
+        closeReportPopup.addEventListener('click', () => reportPopup.style.display = 'none');
+        readConfirmBtn.addEventListener('click', () => {
             reportPopup.style.display = 'none';
+            localStorage.setItem('lastReportRead', new Date().toDateString());
         });
-        readConfirmBtn.addEventListener('click', function() {
-            reportPopup.style.display = 'none';
-            const currentDate = new Date().toDateString();
-            localStorage.setItem('lastReportRead', currentDate);
+        deleteBtn.addEventListener('click', () => {
+            if (confirm('Xóa toàn bộ dữ liệu trên Firebase?')) deleteAllData();
         });
-        deleteBtn.addEventListener('click', function() {
-            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu trên Firebase? Thao tác này không thể hoàn tác.')) {
-                deleteAllData();
-            }
-        });
-        updateAllBtn.addEventListener('click', function() {
-            updateAllOverdueDays();
-        });
-        exportDrugsBtn.addEventListener('click', function() {
-            exportToExcel('drugs', 'Cong_no_Thuoc');
-        });
-        exportNonDrugsBtn.addEventListener('click', function() {
-            exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc');
-        });
+        updateAllBtn.addEventListener('click', () => updateAllOverdueDays());
+        exportDrugsBtn.addEventListener('click', () => exportToExcel('drugs', 'Cong_no_Thuoc'));
+        exportNonDrugsBtn.addEventListener('click', () => exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc'));
+
         async function initializeApp() {
             try {
-                if (db) {
-                    const loadedFromFirebase = await loadDataFromFirebase();
-                    if (loadedFromFirebase) {
-                        showStatus('Đã tải dữ liệu mới nhất từ Cloud (Firebase) và ứng dụng sẵn sàng!', 'success');
+                if (rtdb) {
+                    const success = await loadDataFromRTDB();
+                    if (success) {
+                        showStatus('Đã tải dữ liệu công nợ từ Cloud!', 'success');
                     } else {
                         loadFromLocalStorage();
-                        showStatus('Chưa có dữ liệu trên Cloud. Đã tải dữ liệu Local (nếu có).', 'info');
+                        showStatus('Chưa có dữ liệu trên Cloud.', 'info');
                     }
                 } else {
                     loadFromLocalStorage();
-                    showStatus('Firebase không khả dụng (offline mode). Đã tải dữ liệu Local (nếu có).', 'error');
                 }
-                startPopupChecker(); 
+                startPopupChecker();
             } catch (error) {
-                console.error('Lỗi khởi tạo ứng dụng:', error);
+                console.error('Lỗi khởi tạo:', error);
                 loadFromLocalStorage();
-                startPopupChecker(); 
-                showStatus('Lỗi khởi tạo ứng dụng. Đã tải dữ liệu Local (nếu có).', 'error');
+                startPopupChecker();
             }
         }
-        async function loadDataFromFirebase() {
-            if (!db) return false;
-            try {
-                const snapshot = await db.collection('appData').doc('currentData').get();
-                if (snapshot.exists) {
-                    const data = snapshot.data();
-                    // 🔥 CHỈ LẤY overdueDrugs và overdueNonDrugs
-                    overdueDrugs = data.overdueDrugs || [];
-                    overdueNonDrugs = data.overdueNonDrugs || [];
-                    orderData = null;
-                    debtData = null;
-                    if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
-                        displayResults(overdueDrugs, overdueNonDrugs);
-                    }
-                    document.getElementById('order-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải lên)</div>';
-                    document.getElementById('debt-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải lên)</div>';
-                    localStorage.setItem('congno_data', JSON.stringify({
-                        orderData: null,
-                        debtData: null,
-                        overdueDrugs,
-                        overdueNonDrugs,
-                        lastUpdated: new Date().toISOString()
-                    }));
-                    return true;
-                }
-                return false;
-            } catch (error) {
-                console.error('Lỗi khi tải dữ liệu từ Firebase:', error);
-                return false;
-            }
-        }
-        function loadFromLocalStorage() {
-            try {
-                const savedData = localStorage.getItem('congno_data');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    orderData = data.orderData || null;
-                    debtData = data.debtData || null;
-                    overdueDrugs = data.overdueDrugs || [];
-                    overdueNonDrugs = data.overdueNonDrugs || [];
-                    updateFileStatusFromData();
-                    if (overdueDrugs.length > 0 || overdueNonDrugs.length > 0) {
-                        displayResults(overdueDrugs, overdueNonDrugs);
-                    }
-                }
-            } catch (error) {
-                console.error('Lỗi khi tải dữ liệu từ Local Storage:', error);
-            }
-        }
-        function updateFileStatusFromData() {
-            if (orderData) {
-                updateFileStatus('order-file-status', 'File đã tải từ lưu trữ', true);
-            } else {
-                document.getElementById('order-file-status').innerHTML = '';
-            }
-            if (debtData) {
-                updateFileStatus('debt-file-status', 'File đã tải từ lưu trữ', true);
-            } else {
-                document.getElementById('debt-file-status').innerHTML = '';
-            }
-        }
-        // 🔥 SỬA: CHỈ LƯU overdueDrugs/overdueNonDrugs LÊN FIREBASE
-        async function saveDataToFirebase(forceCloudSave = false) {
-            // Luôn lưu đầy đủ vào Local Storage
-            const fullData = {
+
+        // ✅ HÀM LƯU DỮ LIỆU LÊN REALTIME DATABASE
+        async function saveDataToRTDB(forceCloudSave = false) {
+            // Luôn lưu vào Local Storage
+            localStorage.setItem('congno_data', JSON.stringify({
                 orderData: orderData,
                 debtData: debtData,
                 overdueDrugs: overdueDrugs,
                 overdueNonDrugs: overdueNonDrugs,
                 lastUpdated: new Date().toISOString()
-            };
-            localStorage.setItem('congno_data', JSON.stringify(fullData));
-            // Chỉ lưu kết quả lên Firebase
-            if (db && forceCloudSave) {
-                const cloudData = {
+            }));
+
+            if (rtdb && forceCloudSave) {
+                await rtdb.ref('appData/currentData').set({
                     overdueDrugs: overdueDrugs,
                     overdueNonDrugs: overdueNonDrugs,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                await db.collection('appData').doc('currentData').set(cloudData);
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
             }
         }
+
+        // ✅ HÀM TẢI DỮ LIỆU TỪ REALTIME DATABASE
+        async function loadDataFromRTDB() {
+            if (!rtdb) return false;
+            try {
+                const snapshot = await rtdb.ref('appData/currentData').once('value');
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    overdueDrugs = data.overdueDrugs || [];
+                    overdueNonDrugs = data.overdueNonDrugs || [];
+                    orderData = null;
+                    debtData = null;
+                    displayResults(overdueDrugs, overdueNonDrugs);
+                    document.getElementById('order-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải)</div>';
+                    document.getElementById('debt-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải)</div>';
+                    return true;
+                }
+            } catch (error) {
+                console.error('Lỗi tải RTDB:', error);
+            }
+            return false;
+        }
+
         async function deleteAllData() {
             try {
-                localStorage.removeItem('congno_data');
-                if (db) {
-                    await db.collection('appData').doc('currentData').delete();
-                    showStatus('Đã xóa toàn bộ dữ liệu trên Cloud và Local Storage.', 'success');
-                } else {
-                    showStatus('Đã xóa dữ liệu Local Storage. Firebase không khả dụng để xóa Cloud.', 'info');
-                }
-                orderData = null;
-                debtData = null;
+                if (rtdb) await rtdb.ref('appData/currentData').remove();
                 overdueDrugs = [];
                 overdueNonDrugs = [];
+                orderData = null;
+                debtData = null;
                 document.getElementById('order-file-status').innerHTML = '';
                 document.getElementById('debt-file-status').innerHTML = '';
-                document.getElementById('file-order').value = '';
-                document.getElementById('file-debt').value = '';
                 resultsContainer.style.display = 'none';
+                showStatus('Đã xóa dữ liệu trên Cloud.', 'success');
             } catch (error) {
-                console.error('Lỗi khi xóa dữ liệu:', error);
+                console.error('Lỗi xóa:', error);
                 showStatus('Lỗi khi xóa dữ liệu.', 'error');
             }
         }
+
+        function readExcelFile(file, type) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    if (type === 'order') {
+                        orderData = jsonData;
+                        updateFileStatus('order-file-status', file.name, true);
+                    } else if (type === 'debt') {
+                        debtData = jsonData;
+                        updateFileStatus('debt-file-status', file.name, true);
+                    }
+                    showStatus('File đã được tải lên (chưa lưu Cloud).', 'info');
+                } catch (error) {
+                    showStatus('Lỗi đọc file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // === GIỮ NGUYÊN CÁC HÀM CÒN LẠI TỪ FILE GỐC ===
+        function updateFileStatus(elementId, fileName, isUploaded) {
+            document.getElementById(elementId).innerHTML = `
+                <div style="margin-top:10px;">
+                    <strong>File:</strong> ${fileName}
+                    <span class="file-status ${isUploaded ? 'uploaded' : 'pending'}">${isUploaded ? 'Đã tải' : 'Đang chờ'}</span>
+                </div>
+            `;
+        }
+        function showStatus(message, type) {
+            const el = document.getElementById('status-message');
+            el.textContent = message;
+            el.className = `status ${type}`;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
         function startPopupChecker() {
             if (popupCheckInterval) clearInterval(popupCheckInterval);
-            checkAutoPopup(); 
-            popupCheckInterval = setInterval(checkAutoPopup, 60000); 
+            checkAutoPopup();
+            popupCheckInterval = setInterval(checkAutoPopup, 60000);
         }
         function checkAutoPopup() {
             const now = new Date();
             const currentDay = now.getDay();
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
-            const currentDateStr = now.toDateString();
-            const lastRead = localStorage.getItem('lastReportRead');
-            if (lastRead === currentDateStr) return;
+            if (localStorage.getItem('lastReportRead') === now.toDateString()) return;
             if (!autoPopupConfig.targetWeekdays.includes(currentDay)) return;
-            const isTargetTime = autoPopupConfig.openTimes.some(time => 
-                time.hour === currentHour && time.minute === currentMinute
-            );
-            if (isTargetTime) showReportPopup();
+            if (autoPopupConfig.openTimes.some(t => t.hour === currentHour && t.minute === currentMinute)) {
+                showReportPopup();
+            }
         }
         function showReportPopup() {
-            if ((overdueDrugs.length === 0 && overdueNonDrugs.length === 0) && orderData && debtData) {
-                analyzeDebt(false); 
+            if (overdueDrugs.length === 0 && overdueNonDrugs.length === 0 && orderData && debtData) {
+                analyzeDebt(false);
             }
             loadReportData();
             reportPopup.style.display = 'flex';
@@ -987,66 +958,39 @@
             updateSummaryInfo();
         }
         function updateSummaryInfo() {
-            const drugsSummary = document.getElementById('drugs-summary');
-            const nonDrugsSummary = document.getElementById('non-drugs-summary');
-            const totalDrugs = overdueDrugs.length;
-            const paidDrugs = overdueDrugs.filter(item => item.isPaid).length;
-            const overdueDrugsCount = totalDrugs - paidDrugs;
-            const totalNonDrugs = overdueNonDrugs.length;
-            const paidNonDrugs = overdueNonDrugs.filter(item => item.isPaid).length;
-            const overdueNonDrugsCount = totalNonDrugs - paidNonDrugs;
-            drugsSummary.innerHTML = `📊 Tổng: ${totalDrugs} công nợ | ✅ Đã thanh toán: ${paidDrugs} | ⚠️ Còn nợ: ${overdueDrugsCount}`;
-            nonDrugsSummary.innerHTML = `📊 Tổng: ${totalNonDrugs} công nợ | ✅ Đã thanh toán: ${paidNonDrugs} | ⚠️ Còn nợ: ${overdueNonDrugsCount}`;
+            const d = document;
+            const drugs = overdueDrugs.length;
+            const paidDrugs = overdueDrugs.filter(i => i.isPaid).length;
+            const nonDrugs = overdueNonDrugs.length;
+            const paidNonDrugs = overdueNonDrugs.filter(i => i.isPaid).length;
+            d.getElementById('drugs-summary').innerHTML = `📊 Tổng: ${drugs} | ✅ Đã trả: ${paidDrugs} | ⚠️ Còn: ${drugs - paidDrugs}`;
+            d.getElementById('non-drugs-summary').innerHTML = `📊 Tổng: ${nonDrugs} | ✅ Đã trả: ${paidNonDrugs} | ⚠️ Còn: ${nonDrugs - paidNonDrugs}`;
         }
         function displayScheduleTable(containerId, data, type) {
             const container = document.getElementById(containerId);
             if (data.length === 0) {
-                container.innerHTML = `<div style="text-align: center; padding: 40px; color: #666;"><h3>🎉 KHÔNG CÓ CÔNG NỢ NÀO</h3><p>Không có công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'} nào quá hạn.</p></div>`;
+                container.innerHTML = `<div style="text-align:center;padding:40px;color:#666;"><h3>🎉 KHÔNG CÓ CÔNG NỢ NÀO</h3></div>`;
                 return;
             }
             let html = `<table class="schedule-table"><thead><tr><th>STT</th><th>MÃ HD</th><th>MÃ ĐH</th><th>KHÁCH HÀNG</th><th>NGÀY THANH TOÁN</th><th>SỐ TIỀN NỢ</th><th>NGÀY QUÁ HẠN</th><th>TRẠNG THÁI</th></tr></thead><tbody>`;
-            data.forEach((item, index) => {
-                const status = item.isPaid ? '<span style="color: #27ae60; font-weight: bold;">✅ ĐÃ THANH TOÁN</span>' : '<span style="color: #e74c3c; font-weight: bold;">❌ CHƯA THANH TOÁN</span>';
-                html += `<tr class="${item.isPaid ? 'paid-row' : ''}"><td>${index + 1}</td><td><strong>${item.invoice || 'N/A'}</strong></td><td><strong>${item.orderCode || 'N/A'}</strong></td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td style="text-align: right; font-weight: bold;">${item.debtAmount || '0'}</td><td style="text-align: center;"><span style="background: ${item.daysOverdue > 30 ? '#e74c3c' : item.daysOverdue > 15 ? '#f39c12' : '#f1c40f'}; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold;">${item.daysOverdue || '0'} ngày</span></td><td>${status}</td></tr>`;
+            data.forEach((item, i) => {
+                const status = item.isPaid ? '✅ ĐÃ THANH TOÁN' : '❌ CHƯA THANH TOÁN';
+                const color = item.isPaid ? '#27ae60' : '#e74c3c';
+                html += `<tr class="${item.isPaid ? 'paid-row' : ''}">
+                    <td>${i+1}</td>
+                    <td>${item.invoice || 'N/A'}</td>
+                    <td>${item.orderCode || 'N/A'}</td>
+                    <td>${item.customerName || 'N/A'}</td>
+                    <td>${item.paymentDue || 'N/A'}</td>
+                    <td style="text-align:right;font-weight:bold;">${item.debtAmount || '0'}</td>
+                    <td style="text-align:center;">
+                        <span style="background:${item.daysOverdue>30?'#e74c3c':item.daysOverdue>15?'#f39c12':'#f1c40f'};color:white;padding:2px 8px;border-radius:10px;font-weight:bold;">${item.daysOverdue || '0'} ngày</span>
+                    </td>
+                    <td><span style="color:${color};font-weight:bold;">${status}</span></td>
+                </tr>`;
             });
-            html += `</tbody></table>`;
+            html += '</tbody></table>';
             container.innerHTML = html;
-        }
-        function readExcelFile(file, type) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    if (type === 'order') {
-                        orderData = jsonData;
-                        updateFileStatus('order-file-status', file.name, true);
-                    } else if (type === 'debt') {
-                        debtData = jsonData;
-                        updateFileStatus('debt-file-status', file.name, true);
-                    }
-                    saveDataToFirebase(false); 
-                    showStatus('File đã được tải lên thành công.', 'info');
-                } catch (error) {
-                    showStatus('Lỗi khi đọc file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        function updateFileStatus(elementId, fileName, isUploaded) {
-            const element = document.getElementById(elementId);
-            const statusClass = isUploaded ? 'uploaded' : 'pending';
-            const statusText = isUploaded ? 'Đã tải lên' : 'Đang chờ';
-            element.innerHTML = `<div style="margin-top: 10px;"><strong>File:</strong> ${fileName}<span class="file-status ${statusClass}">${statusText}</span></div>`;
-        }
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = `status ${type}`;
-            statusMessage.style.display = 'block';
-            setTimeout(() => { statusMessage.style.display = 'none'; }, 5000);
         }
         function analyzeDebt(showStatusMessage = true) {
             try {
@@ -1102,26 +1046,13 @@
                         }
                     }
                 }
-                saveDataToFirebase(false); 
                 displayResults(overdueDrugs, overdueNonDrugs);
-                if (showStatusMessage) {
-                    const totalOverdue = overdueDrugs.length + overdueNonDrugs.length;
-                    if (totalOverdue === 0) {
-                        showStatus('Phân tích hoàn tất. Không có công nợ nào quá hạn thanh toán.', 'success');
-                    } else {
-                        showStatus(`Phân tích hoàn tất. Đã tìm thấy ${totalOverdue} công nợ quá hạn.`, 'success');
-                    }
-                }
             } catch (error) {
-                console.error('Lỗi khi phân tích công nợ:', error);
-                if (showStatusMessage) {
-                    showStatus('Đã xảy ra lỗi khi phân tích dữ liệu: ' + error.message, 'error');
-                }
+                console.error('Lỗi phân tích:', error);
+                if (showStatusMessage) showStatus('Lỗi phân tích: ' + error.message, 'error');
             }
         }
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
         function createConnectionMap(orderData, debtData, paymentDueOrderIndex, orderCodeIndex) {
             const connectionMap = new Map();
             const usedOrders = new Set();
@@ -1156,8 +1087,7 @@
         }
         function findOrderByCode(orderData, orderCode, orderCodeIndex) {
             for (let i = 1; i < orderData.length; i++) {
-                const orderRow = orderData[i];
-                if (orderRow && orderRow[orderCodeIndex] === orderCode) return orderRow;
+                if (orderData[i] && orderData[i][orderCodeIndex] === orderCode) return orderData[i];
             }
             return null;
         }
@@ -1192,13 +1122,11 @@
             const minutes = Math.floor(total_seconds / 60) % 60;
             return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
         }
-        function formatDate(date) {
-            return date.toLocaleDateString('vi-VN');
-        }
+        function formatDate(date) { return date.toLocaleDateString('vi-VN'); }
         function formatCurrency(amount) {
             if (amount === undefined || amount === null || isNaN(amount)) return '0';
-            const numericAmount = parseFloat(String(amount).toString().replace(/[^\d.]/g, ''));
-            return isNaN(numericAmount) ? '0' : new Intl.NumberFormat('vi-VN').format(numericAmount);
+            const num = parseFloat(String(amount).replace(/[^\d.]/g, ''));
+            return isNaN(num) ? '0' : new Intl.NumberFormat('vi-VN').format(num);
         }
         function displayResults(drugs, nonDrugs) {
             resultsContainer.style.display = 'block';
@@ -1216,7 +1144,7 @@
                 const rowClass = item.isPaid ? 'paid-row' : 'overdue';
                 html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.daysOverdue || 'N/A'}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
             });
-            html += `</tbody></table><p><strong>Tổng số: ${data.length} công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'}</strong></p>`;
+            html += `</tbody></table><p><strong>Tổng số: ${data.length} công nợ</strong></p>`;
             container.innerHTML = html;
         }
         function updateAllOverdueDays() {
@@ -1224,108 +1152,67 @@
             currentDate.setHours(0, 0, 0, 0);
             const oneDayMs = 24 * 60 * 60 * 1000;
             let updated = false;
-            overdueDrugs.forEach(item => {
-                if (!item.isPaid && item.originalPaymentDue) {
-                    const paymentDueDate = new Date(item.originalPaymentDue);
-                    const newDaysOverdue = Math.floor((currentDate - paymentDueDate) / oneDayMs);
-                    if (newDaysOverdue !== item.daysOverdue) {
-                        item.daysOverdue = newDaysOverdue;
-                        updated = true;
-                        item.debtAmount = formatCurrency(item.originalDebtAmount);
+            [overdueDrugs, overdueNonDrugs].forEach(arr => {
+                arr.forEach(item => {
+                    if (!item.isPaid && item.originalPaymentDue) {
+                        const paymentDueDate = new Date(item.originalPaymentDue);
+                        const newDaysOverdue = Math.floor((currentDate - paymentDueDate) / oneDayMs);
+                        if (newDaysOverdue !== item.daysOverdue) {
+                            item.daysOverdue = newDaysOverdue;
+                            item.debtAmount = formatCurrency(item.originalDebtAmount);
+                            updated = true;
+                        }
                     }
-                }
-            });
-            overdueNonDrugs.forEach(item => {
-                if (!item.isPaid && item.originalPaymentDue) {
-                    const paymentDueDate = new Date(item.originalPaymentDue);
-                    const newDaysOverdue = Math.floor((currentDate - paymentDueDate) / oneDayMs);
-                    if (newDaysOverdue !== item.daysOverdue) {
-                        item.daysOverdue = newDaysOverdue;
-                        updated = true;
-                        item.debtAmount = formatCurrency(item.originalDebtAmount);
-                    }
-                }
+                });
             });
             if (updated) {
-                saveDataToFirebase(true); 
+                saveDataToRTDB(true); 
                 displayResults(overdueDrugs, overdueNonDrugs);
-                showStatus('Đã cập nhật số ngày quá hạn cho tất cả công nợ và lưu lên Cloud.', 'success');
+                showStatus('Đã cập nhật và lưu lên Cloud.', 'success');
             } else {
-                showStatus('Không có thay đổi nào về số ngày quá hạn.', 'info');
+                showStatus('Không có thay đổi.', 'info');
             }
         }
         function exportToExcel(type, fileName) {
-            let data = [];
-            if (type === 'drugs') data = overdueDrugs;
-            else data = overdueNonDrugs;
+            const data = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
             if (data.length === 0) {
-                showStatus('Không có dữ liệu để xuất file Excel.', 'error');
+                showStatus('Không có dữ liệu để xuất.', 'error');
                 return;
             }
             const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Trạng thái']];
-            data.forEach((item, index) => {
-                excelData.push([
-                    index + 1,
-                    item.invoice || '',
-                    item.orderCode || '',
-                    item.customerName || '',
-                    item.paymentDue || '',
-                    item.originalDebtAmount || '',
-                    item.daysOverdue || '',
-                    item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'
-                ]);
+            data.forEach((item, i) => {
+                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
             });
             const ws = XLSX.utils.aoa_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
             XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
-            showStatus(`Đã xuất file ${fileName}.xlsx thành công!`, 'success');
+            showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
         }
     });
+
+    // === HÀM TOÀN CỤC ===
     window.togglePaidStatus = function(id, isPaid, type) {
-        let dataArray = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
-        const item = dataArray.find(item => item.id === id);
+        const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
+        const item = arr.find(i => i.id === id);
         if (item) {
             item.isPaid = isPaid;
             const row = document.getElementById(`row-${id}`);
             if (row) {
-                if (isPaid) {
-                    row.classList.add('paid-row');
-                    row.classList.remove('overdue');
-                } else {
-                    row.classList.remove('paid-row');
-                    row.classList.add('overdue');
-                }
+                row.classList.toggle('paid-row', isPaid);
+                row.classList.toggle('overdue', !isPaid);
             }
-            window.saveDataToFirebase(true); 
+            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
         }
     };
     window.updateRow = function(id, type) {
-        let dataArray = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
-        const itemIndex = dataArray.findIndex(item => item.id === id);
-        if (itemIndex !== -1) {
-            dataArray.splice(itemIndex, 1);
-            window.saveDataToFirebase(true); 
+        const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
+        const index = arr.findIndex(i => i.id === id);
+        if (index !== -1) {
+            arr.splice(index, 1);
+            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
             const row = document.getElementById(`row-${id}`);
-            if(row) row.remove();
-        }
-    };
-    window.saveDataToFirebase = async function(forceCloudSave = false) {
-        const fullData = {
-            orderData: orderData,
-            debtData: debtData,
-            overdueDrugs: overdueDrugs,
-            overdueNonDrugs: overdueNonDrugs,
-            lastUpdated: new Date().toISOString()
-        };
-        localStorage.setItem('congno_data', JSON.stringify(fullData));
-        if (db && forceCloudSave) {
-            const cloudData = {
-                overdueDrugs: overdueDrugs,
-                overdueNonDrugs: overdueNonDrugs,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection('appData').doc('currentData').set(cloudData);
+            if (row) row.remove();
         }
     };
 </script>

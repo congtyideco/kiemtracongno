@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        /* CSS giữ nguyên từ file gốc */
+        /* CSS giữ nguyên */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -193,30 +193,20 @@
             align-items: center;
             margin-bottom: 20px;
         }
-        .export-btn-group {
-            display: flex;
-            gap: 6px;
-        }
         .export-btn {
             background: var(--success-color);
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 12px;
-            display: inline-flex;
+            font-size: 14px;
+            display: flex;
             align-items: center;
-            gap: 4px;
-        }
-        .export-btn.le14 {
-            background: #e74c3c;
-        }
-        .export-btn.ge16 {
-            background: #f39c12;
+            gap: 8px;
         }
         .export-btn:hover {
-            opacity: 0.9;
+            background: #219653;
         }
         table {
             width: 100%;
@@ -597,20 +587,18 @@
             <div id="tab-drugs" class="tab-content active">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Thuốc đã quá hạn</h3>
-                    <div class="export-btn-group">
-                        <button class="export-btn le14" id="export-drugs-le14">🔴 ≤14</button>
-                        <button class="export-btn ge16" id="export-drugs-ge16">🔔 ≥16</button>
-                    </div>
+                    <button class="export-btn" id="export-drugs">
+                        <span>📊</span> Xuất Excel
+                    </button>
                 </div>
                 <div id="drugs-table-container"></div>
             </div>
             <div id="tab-non-drugs" class="tab-content">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Không phải Thuốc đã quá hạn</h3>
-                    <div class="export-btn-group">
-                        <button class="export-btn le14" id="export-non-drugs-le14">🔴 ≤14</button>
-                        <button class="export-btn ge16" id="export-non-drugs-ge16">🔔 ≥16</button>
-                    </div>
+                    <button class="export-btn" id="export-non-drugs">
+                        <span>📊</span> Xuất Excel
+                    </button>
                 </div>
                 <div id="non-drugs-table-container"></div>
             </div>
@@ -624,10 +612,42 @@
             </div>
             <div class="popup-body">
                 <div class="instructions">
+                    <h3>1. Chuẩn bị dữ liệu</h3>
+                    <p>Đảm bảo bạn có 2 file Excel theo đúng định dạng:</p>
+                    <div class="file-info">
+                        <h4>File Đơn hàng</h4>
+                        <ul class="file-list">
+                            <li>Chọn kỳ lùi lại thời điểm hiện tại 3 tháng - xóa tiêu đề- bỏ warptext - merge </li>
+                            <li>Có các cột: Mã, Ngày, Khách hàng, Hạn thanh toán, Số tiền nợ, Thuốc?</li>
+                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
+                        </ul>
+                        <h4>File Công nợ</h4>
+                        <ul class="file-list">
+                            <li>Vào công nợ khách hàng - chọn khách hàng xuất excel- bỏ tiêu đề -wrap text và merger</li>
+                            <li>Có các cột: Hóa đơn, Số tiền nợ, Hạn thanh toán</li>
+                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
+                        </ul>
+                    </div>
+                    <h3>2. Tải lên file</h3>
+                    <ul>
+                        <li>Nhấp vào "Chọn file Excel đơn hàng" và chọn file đơn hàng</li>
+                        <li>Nhấp vào "Chọn file Excel công nợ" và chọn file công nợ</li>
+                    </ul>
+                    <h3>3. LƯU DỮ LIỆU LÊN CLOUD</h3>
+                     <ul>
+                        <li>LƯU Ý: ĐỊNH KỲ CHẠY ĐỂ KIỂM RA -BÁM SÁT NỢ- NHÁC.</li>
+                        <li>Nhấn nút **LƯU & PHÂN TÍCH CÔNG NỢ** để lưu và xử lý dữ liệu cùng lúc.</li>
+                    </ul>
+                    <h3>4. Quản lý công nợ</h3>
+                    <ul>
+                        <li><strong>Đánh dấu đã thanh toán</strong>: Tick vào cột "Đã thanh toán" và nhấn "Cập nhật"</li>
+                        <li><strong>Cập nhật số ngày quá hạn</strong>: Nhấn "Cập nhật tất cả"</li>
+                        <li><strong>Xóa dữ liệu</strong>: Nhấn "🗑️ Xóa dữ liệu" để xóa toàn bộ dữ liệu trên Firebase</li>
+                    </ul>
                     <h3>5. Xuất báo cáo</h3>
                     <ul>
-                        <li><strong>Xuất ≤14</strong>: xuất công nợ có ngày hạn **1–14** (mọi tháng)</li>
-                        <li><strong>Xuất ≥16</strong>: xuất công nợ có ngày hạn **16–31** (mọi tháng)</li>
+                        <li>Nhấp nút "Xuất Excel" ở mỗi tab để tải về file Excel</li>
+                        <li><strong>Cột "Ghi chú"</strong> được lấy từ **cột Q** trong file đơn hàng</li>
                     </ul>
                 </div>
             </div>
@@ -698,7 +718,6 @@
     const invoiceIndex = 3;
     const debtAmountDebtIndex = 5;
     const paymentDueDebtIndex = 6;
-
     document.addEventListener('DOMContentLoaded', function() {
         const fileOrderInput = document.getElementById('file-order');
         const fileDebtInput = document.getElementById('file-debt');
@@ -717,12 +736,8 @@
         const reportPopup = document.getElementById('report-popup');
         const closeReportPopup = document.getElementById('close-report-popup');
         const readConfirmBtn = document.getElementById('read-confirm-btn');
-        // === THÊM 4 NÚT XUẤT MỚI ===
-        const exportDrugsLe14Btn = document.getElementById('export-drugs-le14');
-        const exportDrugsGe16Btn = document.getElementById('export-drugs-ge16');
-        const exportNonDrugsLe14Btn = document.getElementById('export-non-drugs-le14');
-        const exportNonDrugsGe16Btn = document.getElementById('export-non-drugs-ge16');
-
+        const exportDrugsBtn = document.getElementById('export-drugs');
+        const exportNonDrugsBtn = document.getElementById('export-non-drugs');
         initializeApp();
         fileOrderInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -786,13 +801,8 @@
             if (confirm('Xóa toàn bộ dữ liệu trên Firebase?')) deleteAllData();
         });
         updateAllBtn.addEventListener('click', () => updateAllOverdueDays());
-        // === XỬ LÝ 4 NÚT XUẤT MỚI ===
-        exportDrugsLe14Btn.addEventListener('click', () => exportByDayRange(overdueDrugs, 'le14', 'Cong_no_Thuoc_Han_truoc_15'));
-        exportDrugsGe16Btn.addEventListener('click', () => exportByDayRange(overdueDrugs, 'ge16', 'Nhac_thanh_toan_Thuoc_Han_sau_15'));
-        exportNonDrugsLe14Btn.addEventListener('click', () => exportByDayRange(overdueNonDrugs, 'le14', 'Cong_no_Khong_phai_Thuoc_Han_truoc_15'));
-        exportNonDrugsGe16Btn.addEventListener('click', () => exportByDayRange(overdueNonDrugs, 'ge16', 'Nhac_thanh_toan_Khong_phai_Thuoc_Han_sau_15'));
-
-        // === GIỮ NGUYÊN TOÀN BỘ HÀM GỐC TỪ ĐÂY TRỞ XUỐNG ===
+        exportDrugsBtn.addEventListener('click', () => exportToExcel('drugs', 'Cong_no_Thuoc'));
+        exportNonDrugsBtn.addEventListener('click', () => exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc'));
         async function initializeApp() {
             try {
                 if (rtdb) {
@@ -945,7 +955,7 @@
                 container.innerHTML = `<div style="text-align:center;padding:40px;color:#666;"><h3>🎉 KHÔNG CÓ CÔNG NỢ NÀO</h3></div>`;
                 return;
             }
-            let html = `<table class="schedule-table"><thead><tr><th>STT</th><th>MÃ HD</th><th>MÃ ĐH</th><th>KHÁCH HÀNG</th><th>NGÀY THANH TOÁN</th><th>SỐ TIỀN NỢ</th><th>NGÀY QUÁ HẠN</th><th>TRẠNG THÁI</th></tr></thead><tbody>`;
+            let html = `<table class="schedule-table"><thead><tr><th>STT</th><th>MÃ HD</th><th>MÃ ĐH</th><th>KHÁCH HÀNG</th><th>NGÀY THANH TOÁN</th><th>SỐ TIỀN NỢ</th><th>NGÀY QUÁ HẠN</th><th>GHI CHÚ</th><th>TRẠNG THÁI</th></tr></thead><tbody>`;
             data.forEach((item, i) => {
                 const status = item.isPaid ? '✅ ĐÃ THANH TOÁN' : '❌ CHƯA THANH TOÁN';
                 const color = item.isPaid ? '#27ae60' : '#e74c3c';
@@ -959,12 +969,14 @@
                     <td style="text-align:center;">
                         <span style="background:${item.daysOverdue>30?'#e74c3c':item.daysOverdue>15?'#f39c12':'#f1c40f'};color:white;padding:2px 8px;border-radius:10px;font-weight:bold;">${item.daysOverdue || '0'} ngày</span>
                     </td>
+                    <td>${item.note || ''}</td>
                     <td><span style="color:${color};font-weight:bold;">${status}</span></td>
                 </tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
         }
+        // 🔥 HÀM PHÂN TÍCH CÔNG NỢ - ĐÃ THÊM CỘT GHI CHÚ TỪ CỘT Q (INDEX 16)
         function analyzeDebt(showStatusMessage = true) {
             try {
                 const currentDate = new Date();
@@ -977,6 +989,9 @@
                 const paymentDueOrderIndex = orderHeaders.indexOf('Hạn thanh toán');
                 const isDrugIndex = orderHeaders.indexOf('Thuốc?');
                 const debtAmountOrderIndex = orderHeaders.indexOf('Số tiền nợ');
+                // 🔥 CỐ ĐỊNH CHỈ SỐ CỘT GHI CHÚ LÀ 16 (CỘT Q)
+                const NOTES_COLUMN_INDEX = 16;
+
                 const connectionMap = createConnectionMap(orderData, debtData, paymentDueOrderIndex, orderCodeIndex);
                 for (let i = 2; i < debtData.length; i++) {
                     const debtRow = debtData[i];
@@ -997,6 +1012,8 @@
                             const customerName = matchingOrder[customerNameIndex];
                             const isDrug = matchingOrder[isDrugIndex];
                             const orderDebtAmount = matchingOrder[debtAmountOrderIndex];
+                            // 🔥 LẤY GHI CHÚ TỪ CỘT Q (INDEX 16)
+                            const note = matchingOrder.length > NOTES_COLUMN_INDEX ? matchingOrder[NOTES_COLUMN_INDEX] : '';
                             const daysOverdue = Math.floor((currentDate - paymentDueDate) / oneDayMs);
                             const overdueItem = {
                                 id: generateId(),
@@ -1008,7 +1025,8 @@
                                 debtAmount: formatCurrency(debtAmount || orderDebtAmount),
                                 daysOverdue: daysOverdue,
                                 isPaid: false,
-                                originalPaymentDue: paymentDueDate.getTime()
+                                originalPaymentDue: paymentDueDate.getTime(),
+                                note: note || '' // 🔥 THÊM GHI CHÚ
                             };
                             const isDrugValue = typeof isDrug === 'string' ? isDrug.toLowerCase() : isDrug;
                             if (isDrugValue === true || isDrugValue === 'true' || isDrugValue === 1) {
@@ -1112,10 +1130,10 @@
                 container.innerHTML = `<p>Không có công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'} nào quá hạn.</p>`;
                 return;
             }
-            let html = `<table><thead><tr><th>STT</th><th>Mã HD</th><th>Mã DH</th><th>Tên khách hàng</th><th>Ngày thanh toán</th><th>Số tiền nợ</th><th>Số ngày quá hạn</th><th class="checkbox-cell">Đã thanh toán</th><th>Thao tác</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>STT</th><th>Mã HD</th><th>Mã DH</th><th>Tên khách hàng</th><th>Ngày thanh toán</th><th>Số tiền nợ</th><th>Số ngày quá hạn</th><th>Ghi chú</th><th class="checkbox-cell">Đã thanh toán</th><th>Thao tác</th></tr></thead><tbody>`;
             data.forEach((item, index) => {
                 const rowClass = item.isPaid ? 'paid-row' : 'overdue';
-                html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.daysOverdue || 'N/A'}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
+                html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.daysOverdue || 'N/A'}</td><td>${item.note || ''}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
             });
             html += `</tbody></table><p><strong>Tổng số: ${data.length} công nợ</strong></p>`;
             container.innerHTML = html;
@@ -1146,53 +1164,21 @@
                 showStatus('Không có thay đổi.', 'info');
             }
         }
-        // === HÀM XUẤT GỐC ===
         function exportToExcel(type, fileName) {
             const data = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
             if (data.length === 0) {
                 showStatus('Không có dữ liệu để xuất.', 'error');
                 return;
             }
-            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Trạng thái']];
+            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Ghi chú', 'Trạng thái']];
             data.forEach((item, i) => {
-                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
+                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.note || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
             });
             const ws = XLSX.utils.aoa_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
             XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
             showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
-        }
-        // === HÀM XUẤT MỚI: PHÂN THEO NGÀY HẠN (1–14 VÀ 16–31) ===
-        function exportByDayRange(data, range, fileNameBase) {
-            if (data.length === 0) {
-                showStatus('Không có dữ liệu để xuất.', 'info');
-                return;
-            }
-            const filtered = data.filter(item => {
-                if (!item.originalPaymentDue) return false;
-                const day = new Date(item.originalPaymentDue).getDate(); // Lấy ngày trong tháng (1–31)
-                if (range === 'le14') {
-                    return day >= 1 && day <= 14;
-                } else if (range === 'ge16') {
-                    return day >= 16 && day <= 31;
-                }
-                return false;
-            });
-            if (filtered.length === 0) {
-                showStatus(`Không có công nợ nào có ngày hạn ${range === 'le14' ? '1–14' : '16–31'}.`, 'info');
-                return;
-            }
-            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Trạng thái']];
-            filtered.forEach((item, i) => {
-                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
-            });
-            const ws = XLSX.utils.aoa_to_sheet(excelData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
-            const fileName = `${fileNameBase}_${new Date().toISOString().split('T')[0]}`;
-            XLSX.writeFile(wb, `${fileName}.xlsx`);
-            showStatus(`✅ Đã xuất: ${fileName}.xlsx`, 'success');
         }
     });
     window.togglePaidStatus = function(id, isPaid, type) {

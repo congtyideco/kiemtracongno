@@ -6,9 +6,9 @@
     <title>Ứng dụng Kiểm soát Công nợ</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> <!-- ✅ ĐÃ THAY ĐỔI -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        /* === GIỮ NGUYÊN TOÀN BỘ CSS TỪ FILE GỐC === */
+        /* CSS giữ nguyên từ file gốc */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -193,20 +193,30 @@
             align-items: center;
             margin-bottom: 20px;
         }
+        .export-btn-group {
+            display: flex;
+            gap: 6px;
+        }
         .export-btn {
             background: var(--success-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 8px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            display: flex;
+            font-size: 12px;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+        }
+        .export-btn.le14 {
+            background: #e74c3c;
+        }
+        .export-btn.ge16 {
+            background: #f39c12;
         }
         .export-btn:hover {
-            background: #219653;
+            opacity: 0.9;
         }
         table {
             width: 100%;
@@ -587,18 +597,20 @@
             <div id="tab-drugs" class="tab-content active">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Thuốc đã quá hạn</h3>
-                    <button class="export-btn" id="export-drugs">
-                        <span>📊</span> Xuất Excel
-                    </button>
+                    <div class="export-btn-group">
+                        <button class="export-btn le14" id="export-drugs-le14">🔴 ≤14</button>
+                        <button class="export-btn ge16" id="export-drugs-ge16">🔔 ≥16</button>
+                    </div>
                 </div>
                 <div id="drugs-table-container"></div>
             </div>
             <div id="tab-non-drugs" class="tab-content">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Không phải Thuốc đã quá hạn</h3>
-                    <button class="export-btn" id="export-non-drugs">
-                        <span>📊</span> Xuất Excel
-                    </button>
+                    <div class="export-btn-group">
+                        <button class="export-btn le14" id="export-non-drugs-le14">🔴 ≤14</button>
+                        <button class="export-btn ge16" id="export-non-drugs-ge16">🔔 ≥16</button>
+                    </div>
                 </div>
                 <div id="non-drugs-table-container"></div>
             </div>
@@ -612,41 +624,10 @@
             </div>
             <div class="popup-body">
                 <div class="instructions">
-                    <h3>1. Chuẩn bị dữ liệu</h3>
-                    <p>Đảm bảo bạn có 2 file Excel theo đúng định dạng:</p>
-                    <div class="file-info">
-                        <h4>File Đơn hàng</h4>
-                        <ul class="file-list">
-                            <li>Chọn kỳ lùi lại thời điểm hiện tại 3 tháng - xóa tiêu đề- bỏ warptext - merge </li>
-                            <li>Có các cột: Mã, Ngày, Khách hàng, Hạn thanh toán, Số tiền nợ, Thuốc?</li>
-                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
-                        </ul>
-                        <h4>File Công nợ</h4>
-                        <ul class="file-list">
-                            <li>Vào công nợ khách hàng - chọn khách hàng xuất excel- bỏ tiêu đề -wrap text và merger</li>
-                            <li>Có các cột: Hóa đơn, Số tiền nợ, Hạn thanh toán</li>
-                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
-                        </ul>
-                    </div>
-                    <h3>2. Tải lên file</h3>
-                    <ul>
-                        <li>Nhấp vào "Chọn file Excel đơn hàng" và chọn file đơn hàng</li>
-                        <li>Nhấp vào "Chọn file Excel công nợ" và chọn file công nợ</li>
-                    </ul>
-                    <h3>3. LƯU DỮ LIỆU LÊN CLOUD</h3>
-                     <ul>
-                        <li>LƯU Ý: ĐỊNH KỲ CHẠY ĐỂ KIỂM RA -BÁM SÁT NỢ- NHÁC.</li>
-                        <li>Nhấn nút **LƯU & PHÂN TÍCH CÔNG NỢ** để lưu và xử lý dữ liệu cùng lúc.</li>
-                    </ul>
-                    <h3>4. Quản lý công nợ</h3>
-                    <ul>
-                        <li><strong>Đánh dấu đã thanh toán</strong>: Tick vào cột "Đã thanh toán" và nhấn "Cập nhật"</li>
-                        <li><strong>Cập nhật số ngày quá hạn</strong>: Nhấn "Cập nhật tất cả"</li>
-                        <li><strong>Xóa dữ liệu</strong>: Nhấn "🗑️ Xóa dữ liệu" để xóa toàn bộ dữ liệu trên Firebase</li>
-                    </ul>
                     <h3>5. Xuất báo cáo</h3>
                     <ul>
-                        <li>Nhấp nút "Xuất Excel" ở mỗi tab để tải về file Excel</li>
+                        <li><strong>Xuất ≤14</strong>: xuất công nợ có ngày hạn **1–14** (mọi tháng)</li>
+                        <li><strong>Xuất ≥16</strong>: xuất công nợ có ngày hạn **16–31** (mọi tháng)</li>
                     </ul>
                 </div>
             </div>
@@ -687,17 +668,17 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
       authDomain: "notebook-d469b.firebaseapp.com",
-      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com", // ✅ Realtime Database
+      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
       projectId: "notebook-d469b",
       storageBucket: "notebook-d469b.firebasestorage.app",
       messagingSenderId: "835830453697",
       appId: "1:835830453697:web:ba485de6c981e72fe00b40",
       measurementId: "G-P79X8EXF3G"
     };
-    let rtdb = null; // ✅ DÙNG REALTIME DATABASE
+    let rtdb = null;
     try {
         const app = firebase.initializeApp(firebaseConfig);
-        rtdb = firebase.database(); // ✅ KHỞI TẠO RTDB
+        rtdb = firebase.database();
         console.log('Firebase Realtime Database initialized successfully');
     } catch (error) {
         console.error('Firebase RTDB initialization error:', error);
@@ -736,11 +717,13 @@
         const reportPopup = document.getElementById('report-popup');
         const closeReportPopup = document.getElementById('close-report-popup');
         const readConfirmBtn = document.getElementById('read-confirm-btn');
-        const exportDrugsBtn = document.getElementById('export-drugs');
-        const exportNonDrugsBtn = document.getElementById('export-non-drugs');
+        // === THÊM 4 NÚT XUẤT MỚI ===
+        const exportDrugsLe14Btn = document.getElementById('export-drugs-le14');
+        const exportDrugsGe16Btn = document.getElementById('export-drugs-ge16');
+        const exportNonDrugsLe14Btn = document.getElementById('export-non-drugs-le14');
+        const exportNonDrugsGe16Btn = document.getElementById('export-non-drugs-ge16');
 
         initializeApp();
-
         fileOrderInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) readExcelFile(file, 'order');
@@ -749,8 +732,6 @@
             const file = e.target.files[0];
             if (file) readExcelFile(file, 'debt');
         });
-
-        // ✅ NÚT LƯU CLOUD — DÙNG RTDB
         saveCloudBtn.addEventListener('click', async function() {
             if (overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
                 showStatus('Không có công nợ để lưu lên Cloud.', 'info');
@@ -766,7 +747,6 @@
                 this.disabled = false;
             }
         });
-
         analyzeBtn.addEventListener('click', async function() {
             if (!orderData || !debtData) {
                 showStatus('Vui lòng chọn cả hai file Excel để phân tích.', 'error');
@@ -784,7 +764,6 @@
                 showStatus('⚠️ Phân tích thành công nhưng lưu Cloud thất bại.', 'error');
             }
         });
-
         tabButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
@@ -807,9 +786,13 @@
             if (confirm('Xóa toàn bộ dữ liệu trên Firebase?')) deleteAllData();
         });
         updateAllBtn.addEventListener('click', () => updateAllOverdueDays());
-        exportDrugsBtn.addEventListener('click', () => exportToExcel('drugs', 'Cong_no_Thuoc'));
-        exportNonDrugsBtn.addEventListener('click', () => exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc'));
+        // === XỬ LÝ 4 NÚT XUẤT MỚI ===
+        exportDrugsLe14Btn.addEventListener('click', () => exportByDayRange(overdueDrugs, 'le14', 'Cong_no_Thuoc_Han_truoc_15'));
+        exportDrugsGe16Btn.addEventListener('click', () => exportByDayRange(overdueDrugs, 'ge16', 'Nhac_thanh_toan_Thuoc_Han_sau_15'));
+        exportNonDrugsLe14Btn.addEventListener('click', () => exportByDayRange(overdueNonDrugs, 'le14', 'Cong_no_Khong_phai_Thuoc_Han_truoc_15'));
+        exportNonDrugsGe16Btn.addEventListener('click', () => exportByDayRange(overdueNonDrugs, 'ge16', 'Nhac_thanh_toan_Khong_phai_Thuoc_Han_sau_15'));
 
+        // === GIỮ NGUYÊN TOÀN BỘ HÀM GỐC TỪ ĐÂY TRỞ XUỐNG ===
         async function initializeApp() {
             try {
                 if (rtdb) {
@@ -830,10 +813,7 @@
                 startPopupChecker();
             }
         }
-
-        // ✅ HÀM LƯU DỮ LIỆU LÊN REALTIME DATABASE
         async function saveDataToRTDB(forceCloudSave = false) {
-            // Luôn lưu vào Local Storage
             localStorage.setItem('congno_data', JSON.stringify({
                 orderData: orderData,
                 debtData: debtData,
@@ -841,7 +821,6 @@
                 overdueNonDrugs: overdueNonDrugs,
                 lastUpdated: new Date().toISOString()
             }));
-
             if (rtdb && forceCloudSave) {
                 await rtdb.ref('appData/currentData').set({
                     overdueDrugs: overdueDrugs,
@@ -850,8 +829,6 @@
                 });
             }
         }
-
-        // ✅ HÀM TẢI DỮ LIỆU TỪ REALTIME DATABASE
         async function loadDataFromRTDB() {
             if (!rtdb) return false;
             try {
@@ -872,7 +849,6 @@
             }
             return false;
         }
-
         async function deleteAllData() {
             try {
                 if (rtdb) await rtdb.ref('appData/currentData').remove();
@@ -889,7 +865,6 @@
                 showStatus('Lỗi khi xóa dữ liệu.', 'error');
             }
         }
-
         function readExcelFile(file, type) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -912,8 +887,6 @@
             };
             reader.readAsArrayBuffer(file);
         }
-
-        // === GIỮ NGUYÊN CÁC HÀM CÒN LẠI TỪ FILE GỐC ===
         function updateFileStatus(elementId, fileName, isUploaded) {
             document.getElementById(elementId).innerHTML = `
                 <div style="margin-top:10px;">
@@ -1173,6 +1146,7 @@
                 showStatus('Không có thay đổi.', 'info');
             }
         }
+        // === HÀM XUẤT GỐC ===
         function exportToExcel(type, fileName) {
             const data = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
             if (data.length === 0) {
@@ -1189,9 +1163,38 @@
             XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
             showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
         }
+        // === HÀM XUẤT MỚI: PHÂN THEO NGÀY HẠN (1–14 VÀ 16–31) ===
+        function exportByDayRange(data, range, fileNameBase) {
+            if (data.length === 0) {
+                showStatus('Không có dữ liệu để xuất.', 'info');
+                return;
+            }
+            const filtered = data.filter(item => {
+                if (!item.originalPaymentDue) return false;
+                const day = new Date(item.originalPaymentDue).getDate(); // Lấy ngày trong tháng (1–31)
+                if (range === 'le14') {
+                    return day >= 1 && day <= 14;
+                } else if (range === 'ge16') {
+                    return day >= 16 && day <= 31;
+                }
+                return false;
+            });
+            if (filtered.length === 0) {
+                showStatus(`Không có công nợ nào có ngày hạn ${range === 'le14' ? '1–14' : '16–31'}.`, 'info');
+                return;
+            }
+            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Trạng thái']];
+            filtered.forEach((item, i) => {
+                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
+            const fileName = `${fileNameBase}_${new Date().toISOString().split('T')[0]}`;
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+            showStatus(`✅ Đã xuất: ${fileName}.xlsx`, 'success');
+        }
     });
-
-    // === HÀM TOÀN CỤC ===
     window.togglePaidStatus = function(id, isPaid, type) {
         const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
         const item = arr.find(i => i.id === id);
@@ -1202,7 +1205,7 @@
                 row.classList.toggle('paid-row', isPaid);
                 row.classList.toggle('overdue', !isPaid);
             }
-            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
+            saveDataToRTDB(true);
         }
     };
     window.updateRow = function(id, type) {
@@ -1210,7 +1213,7 @@
         const index = arr.findIndex(i => i.id === id);
         if (index !== -1) {
             arr.splice(index, 1);
-            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
+            saveDataToRTDB(true);
             const row = document.getElementById(`row-${id}`);
             if (row) row.remove();
         }

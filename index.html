@@ -587,34 +587,18 @@
             <div id="tab-drugs" class="tab-content active">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Thuốc đã quá hạn</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="export-btn" id="export-drugs">
-                            <span>📊</span> Xuất Excel
-                        </button>
-                        <button class="export-btn" id="export-drugs-le15">
-                            <span>📅</span> Xuất ≤15
-                        </button>
-                        <button class="export-btn" id="export-drugs-gt16">
-                            <span>📅</span> Xuất >16
-                        </button>
-                    </div>
+                    <button class="export-btn" id="export-drugs">
+                        <span>📊</span> Xuất Excel
+                    </button>
                 </div>
                 <div id="drugs-table-container"></div>
             </div>
             <div id="tab-non-drugs" class="tab-content">
                 <div class="tab-header">
                     <h3>Danh sách Công nợ Không phải Thuốc đã quá hạn</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="export-btn" id="export-non-drugs">
-                            <span>📊</span> Xuất Excel
-                        </button>
-                        <button class="export-btn" id="export-non-drugs-le15">
-                            <span>📅</span> Xuất ≤15
-                        </button>
-                        <button class="export-btn" id="export-non-drugs-gt16">
-                            <span>📅</span> Xuất >16
-                        </button>
-                    </div>
+                    <button class="export-btn" id="export-non-drugs">
+                        <span>📊</span> Xuất Excel
+                    </button>
                 </div>
                 <div id="non-drugs-table-container"></div>
             </div>
@@ -754,11 +738,6 @@
         const readConfirmBtn = document.getElementById('read-confirm-btn');
         const exportDrugsBtn = document.getElementById('export-drugs');
         const exportNonDrugsBtn = document.getElementById('export-non-drugs');
-        // 🔔 Bổ sung các nút mới
-        const exportDrugsLe15Btn = document.getElementById('export-drugs-le15');
-        const exportDrugsGt16Btn = document.getElementById('export-drugs-gt16');
-        const exportNonDrugsLe15Btn = document.getElementById('export-non-drugs-le15');
-        const exportNonDrugsGt16Btn = document.getElementById('export-non-drugs-gt16');
         initializeApp();
         fileOrderInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -824,11 +803,6 @@
         updateAllBtn.addEventListener('click', () => updateAllOverdueDays());
         exportDrugsBtn.addEventListener('click', () => exportToExcel('drugs', 'Cong_no_Thuoc'));
         exportNonDrugsBtn.addEventListener('click', () => exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc'));
-        // 🔔 Sự kiện xuất theo ngày trong tháng của hạn thanh toán
-        exportDrugsLe15Btn.addEventListener('click', () => exportByRange('drugs', 'le15'));
-        exportDrugsGt16Btn.addEventListener('click', () => exportByRange('drugs', 'gt16'));
-        exportNonDrugsLe15Btn.addEventListener('click', () => exportByRange('non-drugs', 'le15'));
-        exportNonDrugsGt16Btn.addEventListener('click', () => exportByRange('non-drugs', 'gt16'));
         async function initializeApp() {
             try {
                 if (rtdb) {
@@ -1204,57 +1178,6 @@
             XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
             XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
             showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
-        }
-        // 🔔 HÀM XUẤT THEO NGÀY TRONG THÁNG CỦA HẠN THANH TOÁN
-        function exportByRange(type, range) {
-            const data = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
-            let filteredData = [];
-
-            filteredData = data.filter(item => {
-                if (item.isPaid) return false;
-                if (!item.originalPaymentDue) return false;
-
-                const dueDate = new Date(item.originalPaymentDue);
-                const dayOfMonth = dueDate.getDate(); // 1 → 31
-
-                if (range === 'le15') {
-                    return dayOfMonth >= 1 && dayOfMonth <= 15;
-                } else if (range === 'gt16') {
-                    return dayOfMonth >= 16 && dayOfMonth <= 31;
-                }
-                return false;
-            });
-
-            if (filteredData.length === 0) {
-                showStatus('Không có dữ liệu phù hợp để xuất.', 'info');
-                return;
-            }
-
-            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Ghi chú', 'Trạng thái']];
-            filteredData.forEach((item, i) => {
-                excelData.push([
-                    i + 1,
-                    item.invoice || '',
-                    item.orderCode || '',
-                    item.customerName || '',
-                    item.paymentDue || '',
-                    item.originalDebtAmount || '',
-                    item.daysOverdue || '',
-                    item.note || '',
-                    item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(excelData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Công nợ');
-
-            const prefix = type === 'drugs' ? 'Thuoc' : 'Khong_phai_Thuoc';
-            const suffix = range === 'le15' ? 'le15' : 'gt16';
-            const fileName = `Cong_no_${prefix}_${suffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-            XLSX.writeFile(wb, fileName);
-            showStatus(`✅ Đã xuất file: ${fileName}`, 'success');
         }
     });
     window.togglePaidStatus = function(id, isPaid, type) {

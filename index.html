@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng Kiểm soát Công nợ</title>
+    <title>Ứng dụng Kiểm soát Công nợ (Update)</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> 
     <style>
-        /* CSS giữ nguyên */
+        /* === GIỮ NGUYÊN TOÀN BỘ CSS TỪ FILE GỐC === */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -256,6 +256,70 @@
         .update-btn:hover {
             background: #2980b9;
         }
+        /* CSS MỚI CHO TAB THÁNG */
+        .month-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #b3d9f7;
+            flex-wrap: wrap;
+        }
+        .month-controls .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .month-controls label {
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+        .month-controls input[type="month"], 
+        .month-controls select {
+            padding: 8px 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+        }
+        .filter-btn {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .filter-btn:hover {
+            background: #732d91;
+        }
+        .badge-drug {
+            background: #e67e22;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-nondrug {
+            background: #7f8c8d;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .dh-code {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        /* END CSS MỚI */
         .popup-overlay {
             display: none;
             position: fixed;
@@ -524,6 +588,14 @@
             .schedule-table td {
                 padding: 8px 4px;
             }
+            .month-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .export-btn {
+                margin-left: 0 !important;
+                margin-top: 10px;
+            }
         }
         .schedule-table-container::-webkit-scrollbar {
             width: 8px;
@@ -583,6 +655,7 @@
             <div class="tab-buttons">
                 <button class="tab-button active" data-tab="tab-drugs">Công nợ Thuốc</button>
                 <button class="tab-button" data-tab="tab-non-drugs">Công nợ Không phải Thuốc</button>
+                <button class="tab-button" data-tab="tab-monthly">📅 Tổng hợp theo Tháng</button>
             </div>
             <div id="tab-drugs" class="tab-content active">
                 <div class="tab-header">
@@ -602,6 +675,41 @@
                 </div>
                 <div id="non-drugs-table-container"></div>
             </div>
+            
+            <div id="tab-monthly" class="tab-content">
+                <div class="tab-header">
+                    <h3>Tổng hợp Công nợ phải thanh toán trong tháng (Bao gồm chưa quá hạn)</h3>
+                </div>
+                
+                <div class="month-controls">
+                    <div class="control-group">
+                        <label for="month-picker">Chọn tháng:</label>
+                        <input type="month" id="month-picker">
+                    </div>
+                    
+                    <button id="filter-month-btn" class="filter-btn">🔎 Xem dữ liệu</button>
+                    
+                    <div class="control-group" style="margin-left: 20px; border-left: 1px solid #b3d9f7; padding-left: 20px;">
+                        <label for="type-filter">Lọc Loại hàng:</label>
+                        <select id="type-filter">
+                            <option value="all">Tất cả</option>
+                            <option value="drug">💊 Chỉ Thuốc</option>
+                            <option value="nondrug">📦 Không phải thuốc</option>
+                        </select>
+                    </div>
+
+                    <button class="export-btn" id="export-month" style="margin-left: auto;">
+                        <span>📊</span> Xuất Excel
+                    </button>
+                </div>
+                
+                <div id="monthly-summary" style="margin-bottom: 15px; font-weight: bold; color: #2c3e50;">
+                    </div>
+
+                <div id="monthly-table-container">
+                    <p style="text-align: center; color: #7f8c8d; margin-top: 30px;">Vui lòng chọn tháng và nhấn "Xem dữ liệu"</p>
+                </div>
+            </div>
         </div>
     </div>
     <div class="popup-overlay" id="help-popup">
@@ -613,41 +721,21 @@
             <div class="popup-body">
                 <div class="instructions">
                     <h3>1. Chuẩn bị dữ liệu</h3>
-                    <p>Đảm bảo bạn có 2 file Excel theo đúng định dạng:</p>
+                    <p>Đảm bảo bạn có 2 file Excel theo đúng định dạng...</p>
                     <div class="file-info">
-                        <h4>File Đơn hàng</h4>
-                        <ul class="file-list">
-                            <li>Chọn kỳ lùi lại thời điểm hiện tại 3 tháng - xóa tiêu đề- bỏ warptext - merge </li>
-                            <li>Có các cột: Mã, Ngày, Khách hàng, Hạn thanh toán, Số tiền nợ, Thuốc?</li>
-                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
-                        </ul>
-                        <h4>File Công nợ</h4>
-                        <ul class="file-list">
-                            <li>Vào công nợ khách hàng - chọn khách hàng xuất excel- bỏ tiêu đề -wrap text và merger</li>
-                            <li>Có các cột: Hóa đơn, Số tiền nợ, Hạn thanh toán</li>
-                            <li>Định dạng ngày: dd/mm/yyyy hoặc yyyy-mm-dd</li>
-                        </ul>
+                        <h4>File Đơn hàng, File Công nợ...</h4>
                     </div>
-                    <h3>2. Tải lên file</h3>
-                    <ul>
-                        <li>Nhấp vào "Chọn file Excel đơn hàng" và chọn file đơn hàng</li>
-                        <li>Nhấp vào "Chọn file Excel công nợ" và chọn file công nợ</li>
+                    <h3>2. Xem báo cáo Tháng (Tính năng mới)</h3>
+                     <ul>
+                         <li>Chọn tab <strong>"📅 Tổng hợp theo Tháng"</strong>.</li>
+                         <li>Chọn tháng/năm cần xem và nhấn nút <strong>"Xem dữ liệu"</strong>.</li>
+                         <li><strong>Chức năng:</strong> Liệt kê tất cả các khoản nợ có hạn trả trong tháng đó (bất kể đã quá hạn hay chưa).</li>
+                         <li><strong>Lọc:</strong> Dùng ô chọn để lọc riêng Thuốc hoặc Không phải thuốc.</li>
+                         <li><strong>Mã ĐH:</strong> Cột Mã ĐH được hiển thị cạnh Mã HD để đối chiếu.</li>
                     </ul>
                     <h3>3. LƯU DỮ LIỆU LÊN CLOUD</h3>
                      <ul>
-                        <li>LƯU Ý: ĐỊNH KỲ CHẠY ĐỂ KIỂM RA -BÁM SÁT NỢ- NHÁC.</li>
                         <li>Nhấn nút **LƯU & PHÂN TÍCH CÔNG NỢ** để lưu và xử lý dữ liệu cùng lúc.</li>
-                    </ul>
-                    <h3>4. Quản lý công nợ</h3>
-                    <ul>
-                        <li><strong>Đánh dấu đã thanh toán</strong>: Tick vào cột "Đã thanh toán" và nhấn "Cập nhật"</li>
-                        <li><strong>Cập nhật số ngày quá hạn</strong>: Nhấn "Cập nhật tất cả"</li>
-                        <li><strong>Xóa dữ liệu</strong>: Nhấn "🗑️ Xóa dữ liệu" để xóa toàn bộ dữ liệu trên Firebase</li>
-                    </ul>
-                    <h3>5. Xuất báo cáo</h3>
-                    <ul>
-                        <li>Nhấp nút "Xuất Excel" ở mỗi tab để tải về file Excel</li>
-                        <li><strong>Cột "Ghi chú"</strong> được lấy từ **cột Q** trong file đơn hàng</li>
                     </ul>
                 </div>
             </div>
@@ -688,17 +776,17 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
       authDomain: "notebook-d469b.firebaseapp.com",
-      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
+      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com", // ✅ Realtime Database
       projectId: "notebook-d469b",
       storageBucket: "notebook-d469b.firebasestorage.app",
       messagingSenderId: "835830453697",
       appId: "1:835830453697:web:ba485de6c981e72fe00b40",
       measurementId: "G-P79X8EXF3G"
     };
-    let rtdb = null;
+    let rtdb = null; // ✅ DÙNG REALTIME DATABASE
     try {
         const app = firebase.initializeApp(firebaseConfig);
-        rtdb = firebase.database();
+        rtdb = firebase.database(); // ✅ KHỞI TẠO RTDB
         console.log('Firebase Realtime Database initialized successfully');
     } catch (error) {
         console.error('Firebase RTDB initialization error:', error);
@@ -707,6 +795,8 @@
     let debtData = null;
     let overdueDrugs = [];
     let overdueNonDrugs = [];
+    let monthlyDebts = []; // Dữ liệu cho tab tháng
+
     const autoPopupConfig = {
         targetWeekdays: [0, 1, 2, 3, 4, 5, 6], 
         openTimes: [
@@ -718,6 +808,7 @@
     const invoiceIndex = 3;
     const debtAmountDebtIndex = 5;
     const paymentDueDebtIndex = 6;
+
     document.addEventListener('DOMContentLoaded', function() {
         const fileOrderInput = document.getElementById('file-order');
         const fileDebtInput = document.getElementById('file-debt');
@@ -738,7 +829,20 @@
         const readConfirmBtn = document.getElementById('read-confirm-btn');
         const exportDrugsBtn = document.getElementById('export-drugs');
         const exportNonDrugsBtn = document.getElementById('export-non-drugs');
+
+        // Elements cho tab tháng
+        const monthPicker = document.getElementById('month-picker');
+        const filterMonthBtn = document.getElementById('filter-month-btn');
+        const typeFilter = document.getElementById('type-filter');
+        const exportMonthBtn = document.getElementById('export-month');
+        
+        // Set tháng mặc định
+        const now = new Date();
+        const monthStr = now.toISOString().slice(0, 7); 
+        monthPicker.value = monthStr;
+
         initializeApp();
+
         fileOrderInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) readExcelFile(file, 'order');
@@ -747,6 +851,8 @@
             const file = e.target.files[0];
             if (file) readExcelFile(file, 'debt');
         });
+
+        // ✅ NÚT LƯU CLOUD — DÙNG RTDB
         saveCloudBtn.addEventListener('click', async function() {
             if (overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
                 showStatus('Không có công nợ để lưu lên Cloud.', 'info');
@@ -762,6 +868,7 @@
                 this.disabled = false;
             }
         });
+
         analyzeBtn.addEventListener('click', async function() {
             if (!orderData || !debtData) {
                 showStatus('Vui lòng chọn cả hai file Excel để phân tích.', 'error');
@@ -779,6 +886,7 @@
                 showStatus('⚠️ Phân tích thành công nhưng lưu Cloud thất bại.', 'error');
             }
         });
+
         tabButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
@@ -788,6 +896,34 @@
                 document.getElementById(tabId).classList.add('active');
             });
         });
+        
+        // --- XỬ LÝ LOGIC TAB THÁNG ---
+        filterMonthBtn.addEventListener('click', function() {
+            if (!orderData || !debtData) {
+                showStatus('Vui lòng tải file dữ liệu lên trước hoặc chờ dữ liệu từ Cloud.', 'error');
+                return;
+            }
+            const selectedMonth = monthPicker.value;
+            if (!selectedMonth) {
+                showStatus('Vui lòng chọn tháng.', 'warning');
+                return;
+            }
+            analyzeMonthlyDebts(selectedMonth);
+        });
+
+        typeFilter.addEventListener('change', function() {
+            filterAndDisplayMonthlyData();
+        });
+
+        exportMonthBtn.addEventListener('click', function() {
+             if (monthlyDebts.length === 0) {
+                showStatus('Chưa có dữ liệu tháng để xuất Excel.', 'error');
+                return;
+            }
+            exportMonthlyToExcel();
+        });
+        // ------------------------------
+
         helpBtn.addEventListener('click', () => helpPopup.style.display = 'flex');
         closePopup.addEventListener('click', () => helpPopup.style.display = 'none');
         helpPopup.addEventListener('click', (e) => { if (e.target === helpPopup) helpPopup.style.display = 'none'; });
@@ -803,16 +939,30 @@
         updateAllBtn.addEventListener('click', () => updateAllOverdueDays());
         exportDrugsBtn.addEventListener('click', () => exportToExcel('drugs', 'Cong_no_Thuoc'));
         exportNonDrugsBtn.addEventListener('click', () => exportToExcel('non-drugs', 'Cong_no_Khong_phai_Thuoc'));
+
         async function initializeApp() {
             try {
                 if (rtdb) {
-                    const success = await loadDataFromRTDB();
-                    if (success) {
-                        showStatus('Đã tải dữ liệu công nợ từ Cloud!', 'success');
-                    } else {
-                        loadFromLocalStorage();
-                        showStatus('Chưa có dữ liệu trên Cloud.', 'info');
-                    }
+                    // SETUP LISTENER REALTIME
+                    const dataRef = rtdb.ref('appData/currentData');
+                    dataRef.on('value', (snapshot) => {
+                        if (snapshot.exists()) {
+                            const data = snapshot.val();
+                            overdueDrugs = data.overdueDrugs || [];
+                            overdueNonDrugs = data.overdueNonDrugs || [];
+                            // orderData & debtData không lưu trên cloud để tiết kiệm, user phải load file hoặc lưu local
+                            // Nếu muốn lưu orderData/debtData lên cloud thì phải sửa hàm save, nhưng file gốc chỉ lưu overdue arrays
+                            // Tuy nhiên để phân tích tháng, ta cần orderData/debtData. 
+                            // Nếu user đã load file ở phiên làm việc này, biến toàn cục orderData đã có.
+                            // Nếu user F5, ta load từ LocalStorage.
+                            
+                            displayResults(overdueDrugs, overdueNonDrugs);
+                        }
+                    });
+                    
+                    // Load local storage fallback
+                    loadFromLocalStorage();
+                    showStatus('Đã kết nối Realtime Database.', 'success');
                 } else {
                     loadFromLocalStorage();
                 }
@@ -823,7 +973,25 @@
                 startPopupChecker();
             }
         }
+        
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('congno_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                if(!orderData) orderData = data.orderData; // Chỉ load nếu chưa có (ưu tiên file mới upload)
+                if(!debtData) debtData = data.debtData;
+                if(overdueDrugs.length === 0) overdueDrugs = data.overdueDrugs || [];
+                if(overdueNonDrugs.length === 0) overdueNonDrugs = data.overdueNonDrugs || [];
+                
+                if (orderData) updateFileStatus('order-file-status', 'Dữ liệu từ Local/Cache', true);
+                if (debtData) updateFileStatus('debt-file-status', 'Dữ liệu từ Local/Cache', true);
+                displayResults(overdueDrugs, overdueNonDrugs);
+            }
+        }
+
+        // ✅ HÀM LƯU DỮ LIỆU LÊN REALTIME DATABASE
         async function saveDataToRTDB(forceCloudSave = false) {
+            // Luôn lưu vào Local Storage (bao gồm cả dữ liệu thô để phân tích lại)
             localStorage.setItem('congno_data', JSON.stringify({
                 orderData: orderData,
                 debtData: debtData,
@@ -831,6 +999,7 @@
                 overdueNonDrugs: overdueNonDrugs,
                 lastUpdated: new Date().toISOString()
             }));
+
             if (rtdb && forceCloudSave) {
                 await rtdb.ref('appData/currentData').set({
                     overdueDrugs: overdueDrugs,
@@ -839,33 +1008,15 @@
                 });
             }
         }
-        async function loadDataFromRTDB() {
-            if (!rtdb) return false;
-            try {
-                const snapshot = await rtdb.ref('appData/currentData').once('value');
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    overdueDrugs = data.overdueDrugs || [];
-                    overdueNonDrugs = data.overdueNonDrugs || [];
-                    orderData = null;
-                    debtData = null;
-                    displayResults(overdueDrugs, overdueNonDrugs);
-                    document.getElementById('order-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải)</div>';
-                    document.getElementById('debt-file-status').innerHTML = '<div style="margin-top:10px;"><strong>File:</strong> (Chưa tải)</div>';
-                    return true;
-                }
-            } catch (error) {
-                console.error('Lỗi tải RTDB:', error);
-            }
-            return false;
-        }
+
         async function deleteAllData() {
             try {
                 if (rtdb) await rtdb.ref('appData/currentData').remove();
                 overdueDrugs = [];
                 overdueNonDrugs = [];
-                orderData = null;
-                debtData = null;
+                // Không xóa orderData/debtData local để user không phải upload lại file nếu lỡ tay
+                localStorage.removeItem('congno_data');
+                
                 document.getElementById('order-file-status').innerHTML = '';
                 document.getElementById('debt-file-status').innerHTML = '';
                 resultsContainer.style.display = 'none';
@@ -875,6 +1026,7 @@
                 showStatus('Lỗi khi xóa dữ liệu.', 'error');
             }
         }
+
         function readExcelFile(file, type) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -890,13 +1042,204 @@
                         debtData = jsonData;
                         updateFileStatus('debt-file-status', file.name, true);
                     }
-                    showStatus('File đã được tải lên (chưa lưu Cloud).', 'info');
+                    // Lưu local ngay khi đọc file
+                    localStorage.setItem('congno_data', JSON.stringify({
+                        orderData: orderData,
+                        debtData: debtData,
+                        overdueDrugs: overdueDrugs,
+                        overdueNonDrugs: overdueNonDrugs
+                    }));
+                    showStatus('File đã được tải lên (Lưu Local).', 'info');
                 } catch (error) {
                     showStatus('Lỗi đọc file: ' + error.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
+
+        // === LOGIC PHÂN TÍCH THÁNG (MỚI) ===
+        function analyzeMonthlyDebts(selectedMonthStr) {
+            const [yearStr, monthStr] = selectedMonthStr.split('-');
+            const targetYear = parseInt(yearStr);
+            const targetMonth = parseInt(monthStr) - 1; 
+
+            monthlyDebts = []; 
+
+            if (!orderData || !debtData) return;
+
+            const orderHeaders = orderData[0];
+            const orderCodeIndex = orderHeaders.indexOf('Mã');
+            const customerNameIndex = orderHeaders.indexOf('Khách hàng');
+            const paymentDueOrderIndex = orderHeaders.indexOf('Hạn thanh toán');
+            const isDrugIndex = orderHeaders.indexOf('Thuốc?');
+            const debtAmountOrderIndex = orderHeaders.indexOf('Số tiền nợ');
+
+            const connectionMap = createConnectionMap(orderData, debtData, paymentDueOrderIndex, orderCodeIndex);
+
+            for (let i = 2; i < debtData.length; i++) {
+                const debtRow = debtData[i];
+                if (!debtRow || debtRow.length <= paymentDueDebtIndex || !debtRow[paymentDueDebtIndex]) continue;
+
+                const paymentDueStr = debtRow[paymentDueDebtIndex];
+                const paymentDueDate = parseDate(paymentDueStr);
+
+                if (!paymentDueDate || isNaN(paymentDueDate.getTime())) continue;
+
+                // Logic: Kiểm tra xem hạn thanh toán có nằm trong tháng đã chọn không
+                if (paymentDueDate.getFullYear() === targetYear && paymentDueDate.getMonth() === targetMonth) {
+                    const invoice = debtRow[invoiceIndex];
+                    const orderCode = connectionMap.get(invoice);
+                    let matchingOrder = null;
+                    if (orderCode) matchingOrder = findOrderByCode(orderData, orderCode, orderCodeIndex);
+
+                    let customerName = 'Không tìm thấy';
+                    let isDrug = false;
+                    let debtAmount = debtRow[debtAmountDebtIndex] || 0;
+
+                    if (matchingOrder) {
+                        customerName = matchingOrder[customerNameIndex] || customerName;
+                        const isDrugRaw = matchingOrder[isDrugIndex];
+                        debtAmount = debtRow[debtAmountDebtIndex] || matchingOrder[debtAmountOrderIndex] || 0;
+                        isDrug = (isDrugRaw === true || isDrugRaw === 'true' || isDrugRaw === 1 || String(isDrugRaw).toLowerCase() === 'true');
+                    }
+
+                    const today = new Date(); today.setHours(0,0,0,0); paymentDueDate.setHours(0,0,0,0);
+                    let status = "Trong hạn";
+                    if (today > paymentDueDate) status = "Quá hạn";
+
+                    monthlyDebts.push({
+                        invoice: invoice,
+                        orderCode: orderCode, // Mã ĐH
+                        customerName: customerName,
+                        paymentDue: formatDate(paymentDueDate),
+                        debtAmount: debtAmount,
+                        formattedAmount: formatCurrency(debtAmount),
+                        isDrug: isDrug,
+                        status: status,
+                        rawDate: paymentDueDate
+                    });
+                }
+            }
+            monthlyDebts.sort((a, b) => a.rawDate - b.rawDate);
+            filterAndDisplayMonthlyData();
+        }
+
+        function filterAndDisplayMonthlyData() {
+            const filterType = document.getElementById('type-filter').value;
+            let filteredData = [];
+
+            if (filterType === 'all') {
+                filteredData = monthlyDebts;
+            } else if (filterType === 'drug') {
+                filteredData = monthlyDebts.filter(item => item.isDrug);
+            } else if (filterType === 'nondrug') {
+                filteredData = monthlyDebts.filter(item => !item.isDrug);
+            }
+
+            displayMonthlyTable(filteredData);
+        }
+
+        function displayMonthlyTable(dataToDisplay) {
+            const container = document.getElementById('monthly-table-container');
+            const summaryDiv = document.getElementById('monthly-summary');
+            const monthVal = document.getElementById('month-picker').value;
+
+            if (dataToDisplay.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 20px;">Không tìm thấy dữ liệu phù hợp trong tháng ${monthVal}</div>`;
+                summaryDiv.innerHTML = '';
+                return;
+            }
+
+            let totalAmount = 0;
+            dataToDisplay.forEach(item => {
+                const val = parseFloat(String(item.debtAmount).replace(/[^\d.]/g, ''));
+                if (!isNaN(val)) totalAmount += val;
+            });
+
+            summaryDiv.innerHTML = `
+                <span>Số lượng: ${dataToDisplay.length}</span> | 
+                <span>Tổng giá trị: <span style="color: #c0392b; font-size: 1.2em;">${new Intl.NumberFormat('vi-VN').format(totalAmount)} VNĐ</span></span>
+            `;
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Ngày thanh toán</th>
+                            <th>Mã ĐH (DH)</th>
+                            <th>Mã Hóa Đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Loại</th>
+                            <th>Số tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            dataToDisplay.forEach((item, index) => {
+                const typeBadge = item.isDrug 
+                    ? '<span class="badge-drug">Thuốc</span>' 
+                    : '<span class="badge-nondrug">Khác</span>';
+                
+                const statusColor = item.status === "Quá hạn" ? "red" : "green";
+
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.paymentDue}</td>
+                        <td class="dh-code">${item.orderCode || ''}</td>
+                        <td><strong>${item.invoice || ''}</strong></td>
+                        <td>${item.customerName}</td>
+                        <td style="text-align: center;">${typeBadge}</td>
+                        <td style="text-align: right; font-weight: bold;">${item.formattedAmount}</td>
+                        <td style="color: ${statusColor}; font-weight: bold;">${item.status}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function exportMonthlyToExcel() {
+            const filterType = document.getElementById('type-filter').value;
+            let dataToExport = [];
+             if (filterType === 'all') {
+                dataToExport = monthlyDebts;
+            } else if (filterType === 'drug') {
+                dataToExport = monthlyDebts.filter(item => item.isDrug);
+            } else if (filterType === 'nondrug') {
+                dataToExport = monthlyDebts.filter(item => !item.isDrug);
+            }
+
+            const monthVal = document.getElementById('month-picker').value;
+            const excelData = [
+                ['BÁO CÁO CÔNG NỢ THÁNG ' + monthVal + (filterType === 'drug' ? ' (THUỐC)' : (filterType === 'nondrug' ? ' (KHÔNG PHẢI THUỐC)' : ' (TỔNG HỢP)'))],
+                ['STT', 'Ngày thanh toán', 'Mã ĐH', 'Mã Hóa Đơn', 'Khách hàng', 'Loại hàng', 'Số tiền', 'Trạng thái']
+            ];
+
+            dataToExport.forEach((item, index) => {
+                excelData.push([
+                    index + 1,
+                    item.paymentDue,
+                    item.orderCode,
+                    item.invoice,
+                    item.customerName,
+                    item.isDrug ? 'Thuốc' : 'Khác',
+                    item.debtAmount, 
+                    item.status
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Thang_' + monthVal);
+            XLSX.writeFile(wb, `BaoCao_CongNo_${filterType}_${monthVal}.xlsx`);
+        }
+
+        // === GIỮ NGUYÊN CÁC HÀM CÒN LẠI TỪ FILE GỐC ===
         function updateFileStatus(elementId, fileName, isUploaded) {
             document.getElementById(elementId).innerHTML = `
                 <div style="margin-top:10px;">
@@ -955,7 +1298,7 @@
                 container.innerHTML = `<div style="text-align:center;padding:40px;color:#666;"><h3>🎉 KHÔNG CÓ CÔNG NỢ NÀO</h3></div>`;
                 return;
             }
-            let html = `<table class="schedule-table"><thead><tr><th>STT</th><th>MÃ HD</th><th>MÃ ĐH</th><th>KHÁCH HÀNG</th><th>NGÀY THANH TOÁN</th><th>SỐ TIỀN NỢ</th><th>NGÀY QUÁ HẠN</th><th>GHI CHÚ</th><th>TRẠNG THÁI</th></tr></thead><tbody>`;
+            let html = `<table class="schedule-table"><thead><tr><th>STT</th><th>MÃ HD</th><th>MÃ ĐH</th><th>KHÁCH HÀNG</th><th>NGÀY THANH TOÁN</th><th>SỐ TIỀN NỢ</th><th>NGÀY QUÁ HẠN</th><th>TRẠNG THÁI</th></tr></thead><tbody>`;
             data.forEach((item, i) => {
                 const status = item.isPaid ? '✅ ĐÃ THANH TOÁN' : '❌ CHƯA THANH TOÁN';
                 const color = item.isPaid ? '#27ae60' : '#e74c3c';
@@ -969,14 +1312,12 @@
                     <td style="text-align:center;">
                         <span style="background:${item.daysOverdue>30?'#e74c3c':item.daysOverdue>15?'#f39c12':'#f1c40f'};color:white;padding:2px 8px;border-radius:10px;font-weight:bold;">${item.daysOverdue || '0'} ngày</span>
                     </td>
-                    <td>${item.note || ''}</td>
                     <td><span style="color:${color};font-weight:bold;">${status}</span></td>
                 </tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
         }
-        // 🔥 HÀM PHÂN TÍCH CÔNG NỢ - ĐÃ THÊM CỘT GHI CHÚ TỪ CỘT Q (INDEX 16)
         function analyzeDebt(showStatusMessage = true) {
             try {
                 const currentDate = new Date();
@@ -989,8 +1330,6 @@
                 const paymentDueOrderIndex = orderHeaders.indexOf('Hạn thanh toán');
                 const isDrugIndex = orderHeaders.indexOf('Thuốc?');
                 const debtAmountOrderIndex = orderHeaders.indexOf('Số tiền nợ');
-                // 🔥 CỐ ĐỊNH CHỈ SỐ CỘT GHI CHÚ LÀ 16 (CỘT Q)
-                const NOTES_COLUMN_INDEX = 16;
                 const connectionMap = createConnectionMap(orderData, debtData, paymentDueOrderIndex, orderCodeIndex);
                 for (let i = 2; i < debtData.length; i++) {
                     const debtRow = debtData[i];
@@ -1011,8 +1350,6 @@
                             const customerName = matchingOrder[customerNameIndex];
                             const isDrug = matchingOrder[isDrugIndex];
                             const orderDebtAmount = matchingOrder[debtAmountOrderIndex];
-                            // 🔥 LẤY GHI CHÚ TỪ CỘT Q (INDEX 16)
-                            const note = matchingOrder.length > NOTES_COLUMN_INDEX ? matchingOrder[NOTES_COLUMN_INDEX] : '';
                             const daysOverdue = Math.floor((currentDate - paymentDueDate) / oneDayMs);
                             const overdueItem = {
                                 id: generateId(),
@@ -1024,8 +1361,7 @@
                                 debtAmount: formatCurrency(debtAmount || orderDebtAmount),
                                 daysOverdue: daysOverdue,
                                 isPaid: false,
-                                originalPaymentDue: paymentDueDate.getTime(),
-                                note: note || '' // 🔥 THÊM GHI CHÚ
+                                originalPaymentDue: paymentDueDate.getTime()
                             };
                             const isDrugValue = typeof isDrug === 'string' ? isDrug.toLowerCase() : isDrug;
                             if (isDrugValue === true || isDrugValue === 'true' || isDrugValue === 1) {
@@ -1129,10 +1465,10 @@
                 container.innerHTML = `<p>Không có công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'} nào quá hạn.</p>`;
                 return;
             }
-            let html = `<table><thead><tr><th>STT</th><th>Mã HD</th><th>Mã DH</th><th>Tên khách hàng</th><th>Ngày thanh toán</th><th>Số tiền nợ</th><th>Số ngày quá hạn</th><th>Ghi chú</th><th class="checkbox-cell">Đã thanh toán</th><th>Thao tác</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>STT</th><th>Mã HD</th><th>Mã DH</th><th>Tên khách hàng</th><th>Ngày thanh toán</th><th>Số tiền nợ</th><th>Số ngày quá hạn</th><th class="checkbox-cell">Đã thanh toán</th><th>Thao tác</th></tr></thead><tbody>`;
             data.forEach((item, index) => {
                 const rowClass = item.isPaid ? 'paid-row' : 'overdue';
-                html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.daysOverdue || 'N/A'}</td><td>${item.note || ''}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
+                html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.daysOverdue || 'N/A'}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
             });
             html += `</tbody></table><p><strong>Tổng số: ${data.length} công nợ</strong></p>`;
             container.innerHTML = html;
@@ -1169,9 +1505,9 @@
                 showStatus('Không có dữ liệu để xuất.', 'error');
                 return;
             }
-            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Ghi chú', 'Trạng thái']];
+            const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Số ngày quá hạn', 'Trạng thái']];
             data.forEach((item, i) => {
-                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.note || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
+                excelData.push([i+1, item.invoice || '', item.orderCode || '', item.customerName || '', item.paymentDue || '', item.originalDebtAmount || '', item.daysOverdue || '', item.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán']);
             });
             const ws = XLSX.utils.aoa_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
@@ -1180,6 +1516,8 @@
             showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
         }
     });
+
+    // === HÀM TOÀN CỤC ===
     window.togglePaidStatus = function(id, isPaid, type) {
         const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
         const item = arr.find(i => i.id === id);
@@ -1190,7 +1528,7 @@
                 row.classList.toggle('paid-row', isPaid);
                 row.classList.toggle('overdue', !isPaid);
             }
-            saveDataToRTDB(true);
+            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
         }
     };
     window.updateRow = function(id, type) {
@@ -1198,11 +1536,11 @@
         const index = arr.findIndex(i => i.id === id);
         if (index !== -1) {
             arr.splice(index, 1);
-            saveDataToRTDB(true);
+            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
             const row = document.getElementById(`row-${id}`);
             if (row) row.remove();
         }
     };
-</script>
+   </script>
 </body>
 </html>

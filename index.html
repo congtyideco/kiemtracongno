@@ -3,621 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng Kiểm soát Công nợ (Update)</title>
+    <title>Ứng dụng Kiểm soát Công nợ (Full Realtime)</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script> 
     <style>
-        /* === GIỮ NGUYÊN TOÀN BỘ CSS TỪ FILE GỐC === */
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #e74c3c;
-            --light-bg: #f8f9fa;
-            --border-color: #dee2e6;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-            background-color: #f5f7fa;
-            color: #333;
-        }
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 25px 30px;
-            position: relative;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-        }
-        .header p {
-            margin: 10px 0 0;
-            opacity: 0.9;
-            font-size: 16px;
-        }
-        .header-controls {
-            position: absolute;
-            top: 25px;
-            right: 30px;
-            display: flex;
-            gap: 10px;
-        }
-        .help-btn, .delete-btn, .update-all-btn, .schedule-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        .help-btn:hover, .delete-btn:hover, .update-all-btn:hover, .schedule-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .delete-btn {
-            background: rgba(231, 76, 60, 0.8);
-        }
-        .update-all-btn {
-            background: rgba(52, 152, 219, 0.8);
-        }
-        .upload-section {
-            padding: 30px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .upload-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-        .file-upload-card {
-            background: var(--light-bg);
-            padding: 25px;
-            border-radius: 8px;
-            border: 2px dashed var(--border-color);
-            transition: all 0.3s;
-        }
-        .file-upload-card:hover {
-            border-color: var(--secondary-color);
-        }
-        .file-upload-card h3 {
-            margin-top: 0;
-            color: var(--primary-color);
-            font-size: 18px;
-        }
-        .file-input {
-            margin: 15px 0;
-        }
-        .file-input label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        .file-input input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background: white;
-        }
-        .analyze-btn {
-            background: var(--success-color);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: background 0.3s;
-            display: block;
-            margin: 0 auto;
-        }
-        .analyze-btn:hover {
-            background: #219653;
-        }
-        .analyze-btn:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-        .status {
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .status.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .status.info {
-            background-color: #cce7ff;
-            color: #004085;
-            border: 1px solid #b3d7ff;
-        }
-        .tab-container {
-            margin-top: 0;
-        }
-        .tab-buttons {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--light-bg);
-        }
-        .tab-button {
-            padding: 15px 30px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        .tab-button.active {
-            color: var(--secondary-color);
-            border-bottom-color: var(--secondary-color);
-            background: white;
-        }
-        .tab-content {
-            display: none;
-            padding: 25px;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .tab-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .export-btn {
-            background: var(--success-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .export-btn:hover {
-            background: #219653;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 500;
-            position: sticky;
-            top: 0;
-        }
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        .overdue {
-            background-color: #ffe6e6;
-        }
-        .overdue:hover {
-            background-color: #ffcccc;
-        }
-        .paid-row {
-            background-color: #e8f5e8 !important;
-            text-decoration: line-through;
-            opacity: 0.7;
-        }
-        .checkbox-cell {
-            text-align: center;
-            width: 50px;
-        }
-        .update-btn {
-            background: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .update-btn:hover {
-            background: #2980b9;
-        }
-        /* CSS MỚI CHO TAB THÁNG */
-        .month-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            background: #e8f4fd;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #b3d9f7;
-            flex-wrap: wrap;
-        }
-        .month-controls .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .month-controls label {
-            font-weight: 600;
-            color: var(--primary-color);
-            white-space: nowrap;
-        }
-        .month-controls input[type="month"], 
-        .month-controls select {
-            padding: 8px 15px;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            font-size: 16px;
-            background: white;
-        }
-        .filter-btn {
-            background: #8e44ad;
-            color: white;
-            border: none;
-            padding: 9px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        .filter-btn:hover {
-            background: #732d91;
-        }
-        .badge-drug {
-            background: #e67e22;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-nondrug {
-            background: #7f8c8d;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .dh-code {
-            font-weight: bold;
-            color: #2980b9;
-        }
-        /* END CSS MỚI */
-        .popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-content {
-            background: white;
-            width: 1000px;
-            height: 600px;
-            border-radius: 10px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .popup-header {
-            background: var(--primary-color);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .popup-header h2 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .close-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-body {
-            padding: 25px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .instructions h3 {
-            color: var(--primary-color);
-            margin-top: 25px;
-            margin-bottom: 15px;
-        }
-        .instructions ul {
-            padding-left: 20px;
-        }
-        .instructions li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-        .file-info {
-            margin-top: 30px;
-            padding: 20px;
-            background: var(--light-bg);
-            border-radius: 5px;
-        }
-        .file-info h4 {
-            margin-top: 0;
-            color: var(--primary-color);
-        }
-        .file-list {
-            list-style: none;
-            padding: 0;
-        }
-        .file-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .file-list li:last-child {
-            border-bottom: none;
-        }
-        .file-status {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .file-status.uploaded {
-            background: var(--success-color);
-            color: white;
-        }
-        .file-status.pending {
-            background: #f39c12;
-            color: white;
-        }
-        .schedule-popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        .schedule-popup-content {
-            background: white;
-            width: 1300px;
-            height: 800px; 
-            border-radius: 15px;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; 
-        }
-        .schedule-popup-header {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-        .schedule-popup-header h2 {
-            margin: 0;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .schedule-popup-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .schedule-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .schedule-section h3 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-            flex-shrink: 0;
-        }
-        .schedule-table-container {
-            overflow-y: auto;
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: white;
-        }
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px;
-        }
-        .schedule-table th {
-            background: #34495e;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .schedule-table td {
-            padding: 10px 8px;
-            border: 1px solid #ddd;
-            font-size: 13px;
-        }
-        .schedule-table tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-        .schedule-table tr:hover {
-            background: #e3f2fd;
-        }
-        .schedule-popup-footer {
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .read-confirm-btn {
-            background: linear-gradient(135deg, #27ae60, #219653);
-            color: white;
-            border: none;
-            padding: 12px 40px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-            transition: all 0.3s ease;
-        }
-        .read-confirm-btn:hover {
-            background: linear-gradient(135deg, #219653, #1e8449);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-        }
-        .summary-info {
-            background: #e8f4fd;
-            border: 1px solid #b3d9f7;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-weight: 500;
-            flex-shrink: 0;
-        }
-        @media (max-width: 1350px) {
-            .schedule-popup-content {
-                width: 95%; 
-                height: 90%;
-            }
-        }
-        @media (max-width: 1024px) {
-            .schedule-popup-body {
-                grid-template-columns: 1fr;
-            }
-            .schedule-table {
-                min-width: 400px;
-            }
-        }
-        @media (max-width: 768px) {
-            .upload-grid {
-                grid-template-columns: 1fr;
-            }
-            .popup-content {
-                width: 95%;
-                height: 80%;
-            }
-            .header-controls {
-                position: static;
-                margin-top: 15px;
-                justify-content: flex-end;
-            }
-            .schedule-popup-content {
-                width: 98%;
-                height: 95%;
-            }
-            .schedule-table {
-                min-width: 300px;
-                font-size: 12px;
-            }
-            .schedule-table th,
-            .schedule-table td {
-                padding: 8px 4px;
-            }
-            .month-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .export-btn {
-                margin-left: 0 !important;
-                margin-top: 10px;
-            }
-        }
-        .schedule-table-container::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        .schedule-table-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .schedule-table-container::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        .schedule-table-container::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
+        /* === GIỮ NGUYÊN TOÀN BỘ CSS === */
+        :root { --primary-color: #2c3e50; --secondary-color: #3498db; --success-color: #27ae60; --warning-color: #e74c3c; --light-bg: #f8f9fa; --border-color: #dee2e6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; line-height: 1.6; background-color: #f5f7fa; color: #333; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 25px 30px; position: relative; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+        .header p { margin: 10px 0 0; opacity: 0.9; font-size: 16px; }
+        .header-controls { position: absolute; top: 25px; right: 30px; display: flex; gap: 10px; }
+        .help-btn, .delete-btn, .update-all-btn, .schedule-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .help-btn:hover, .delete-btn:hover, .update-all-btn:hover, .schedule-btn:hover { background: rgba(255,255,255,0.3); }
+        .delete-btn { background: rgba(231, 76, 60, 0.8); }
+        .update-all-btn { background: rgba(52, 152, 219, 0.8); }
+        .upload-section { padding: 30px; border-bottom: 1px solid var(--border-color); }
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; }
+        .file-upload-card { background: var(--light-bg); padding: 25px; border-radius: 8px; border: 2px dashed var(--border-color); transition: all 0.3s; }
+        .file-upload-card:hover { border-color: var(--secondary-color); }
+        .file-upload-card h3 { margin-top: 0; color: var(--primary-color); font-size: 18px; }
+        .file-input { margin: 15px 0; }
+        .file-input label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .file-input input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; background: white; }
+        .analyze-btn { background: var(--success-color); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; transition: background 0.3s; display: block; margin: 0 auto; }
+        .analyze-btn:hover { background: #219653; }
+        .analyze-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+        .status { margin: 20px 0; padding: 15px; border-radius: 5px; text-align: center; }
+        .status.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background-color: #cce7ff; color: #004085; border: 1px solid #b3d7ff; }
+        .tab-container { margin-top: 0; }
+        .tab-buttons { display: flex; border-bottom: 1px solid var(--border-color); background: var(--light-bg); }
+        .tab-button { padding: 15px 30px; background: none; border: none; cursor: pointer; font-size: 16px; font-weight: 500; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-button.active { color: var(--secondary-color); border-bottom-color: var(--secondary-color); background: white; }
+        .tab-content { display: none; padding: 25px; }
+        .tab-content.active { display: block; }
+        .tab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .export-btn { background: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .export-btn:hover { background: #219653; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
+        th { background-color: var(--primary-color); color: white; font-weight: 500; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .overdue { background-color: #ffe6e6; }
+        .overdue:hover { background-color: #ffcccc; }
+        .paid-row { background-color: #e8f5e8 !important; text-decoration: line-through; opacity: 0.7; }
+        .checkbox-cell { text-align: center; width: 50px; }
+        .update-btn { background: var(--secondary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .update-btn:hover { background: #2980b9; }
+        .month-controls { display: flex; gap: 15px; align-items: center; background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9f7; flex-wrap: wrap; }
+        .month-controls .control-group { display: flex; align-items: center; gap: 10px; }
+        .month-controls label { font-weight: 600; color: var(--primary-color); white-space: nowrap; }
+        .month-controls input[type="month"], .month-controls select { padding: 8px 15px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 16px; background: white; }
+        .filter-btn { background: #8e44ad; color: white; border: none; padding: 9px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        .filter-btn:hover { background: #732d91; }
+        .badge-drug { background: #e67e22; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-nondrug { background: #7f8c8d; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .dh-code { font-weight: bold; color: #2980b9; }
+        .popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .popup-content { background: white; width: 1000px; height: 600px; border-radius: 10px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
+        .popup-header { background: var(--primary-color); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .popup-header h2 { margin: 0; font-size: 24px; }
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .popup-body { padding: 25px; overflow-y: auto; flex: 1; }
+        .instructions h3 { color: var(--primary-color); margin-top: 25px; margin-bottom: 15px; }
+        .instructions ul { padding-left: 20px; }
+        .instructions li { margin-bottom: 10px; line-height: 1.6; }
+        .file-info { margin-top: 30px; padding: 20px; background: var(--light-bg); border-radius: 5px; }
+        .file-info h4 { margin-top: 0; color: var(--primary-color); }
+        .file-list { list-style: none; padding: 0; }
+        .file-list li { padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .file-list li:last-child { border-bottom: none; }
+        .file-status { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px; }
+        .file-status.uploaded { background: var(--success-color); color: white; }
+        .file-status.pending { background: #f39c12; color: white; }
+        .schedule-popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .schedule-popup-content { background: white; width: 1300px; height: 800px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+        .schedule-popup-header { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .schedule-popup-header h2 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+        .schedule-popup-body { padding: 20px; overflow-y: auto; flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .schedule-section { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #e9ecef; overflow: hidden; display: flex; flex-direction: column; }
+        .schedule-section h3 { color: #2c3e50; margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #3498db; flex-shrink: 0; }
+        .schedule-table-container { overflow-y: auto; flex: 1; border: 1px solid #ddd; border-radius: 5px; background: white; }
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .schedule-table th { background: #34495e; color: white; padding: 12px 8px; text-align: left; position: sticky; top: 0; z-index: 10; }
+        .schedule-table td { padding: 10px 8px; border: 1px solid #ddd; font-size: 13px; }
+        .schedule-table tr:nth-child(even) { background: #f8f9fa; }
+        .schedule-table tr:hover { background: #e3f2fd; }
+        .schedule-popup-footer { padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #dee2e6; display: flex; justify-content: center; flex-shrink: 0; }
+        .read-confirm-btn { background: linear-gradient(135deg, #27ae60, #219653); color: white; border: none; padding: 12px 40px; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: 600; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); transition: all 0.3s ease; }
+        .read-confirm-btn:hover { background: linear-gradient(135deg, #219653, #1e8449); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4); }
+        .summary-info { background: #e8f4fd; border: 1px solid #b3d9f7; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; font-weight: 500; flex-shrink: 0; }
+        @media (max-width: 1350px) { .schedule-popup-content { width: 95%; height: 90%; } }
+        @media (max-width: 1024px) { .schedule-popup-body { grid-template-columns: 1fr; } .schedule-table { min-width: 400px; } }
+        @media (max-width: 768px) { .upload-grid { grid-template-columns: 1fr; } .popup-content { width: 95%; height: 80%; } .header-controls { position: static; margin-top: 15px; justify-content: flex-end; } .schedule-popup-content { width: 98%; height: 95%; } .schedule-table { min-width: 300px; font-size: 12px; } .schedule-table th, .schedule-table td { padding: 8px 4px; } .month-controls { flex-direction: column; align-items: stretch; } .export-btn { margin-left: 0 !important; margin-top: 10px; } }
+        .schedule-table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .schedule-table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .schedule-table-container::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .schedule-table-container::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Ứng dụng Kiểm soát Công nợ</h1>
+            <h1>Ứng dụng Kiểm soát Công nợ (Realtime Full Data)</h1>
             <p>Theo dõi và quản lý công nợ khách hàng hiệu quả - Đồng bộ đa thiết bị</p>
             <div class="header-controls">
                 <button class="update-all-btn" id="update-all-btn">🔄 Cập nhật tất cả</button>
@@ -675,20 +167,16 @@
                 </div>
                 <div id="non-drugs-table-container"></div>
             </div>
-            
             <div id="tab-monthly" class="tab-content">
                 <div class="tab-header">
-                    <h3>Tổng hợp Công nợ phải thanh toán trong tháng (Bao gồm chưa quá hạn)</h3>
+                    <h3>Tổng hợp Công nợ trong tháng (Realtime)</h3>
                 </div>
-                
                 <div class="month-controls">
                     <div class="control-group">
                         <label for="month-picker">Chọn tháng:</label>
                         <input type="month" id="month-picker">
                     </div>
-                    
                     <button id="filter-month-btn" class="filter-btn">🔎 Xem dữ liệu</button>
-                    
                     <div class="control-group" style="margin-left: 20px; border-left: 1px solid #b3d9f7; padding-left: 20px;">
                         <label for="type-filter">Lọc Loại hàng:</label>
                         <select id="type-filter">
@@ -697,15 +185,11 @@
                             <option value="nondrug">📦 Không phải thuốc</option>
                         </select>
                     </div>
-
                     <button class="export-btn" id="export-month" style="margin-left: auto;">
                         <span>📊</span> Xuất Excel
                     </button>
                 </div>
-                
-                <div id="monthly-summary" style="margin-bottom: 15px; font-weight: bold; color: #2c3e50;">
-                    </div>
-
+                <div id="monthly-summary" style="margin-bottom: 15px; font-weight: bold; color: #2c3e50;"></div>
                 <div id="monthly-table-container">
                     <p style="text-align: center; color: #7f8c8d; margin-top: 30px;">Vui lòng chọn tháng và nhấn "Xem dữ liệu"</p>
                 </div>
@@ -720,22 +204,12 @@
             </div>
             <div class="popup-body">
                 <div class="instructions">
-                    <h3>1. Chuẩn bị dữ liệu</h3>
-                    <p>Đảm bảo bạn có 2 file Excel theo đúng định dạng...</p>
-                    <div class="file-info">
-                        <h4>File Đơn hàng, File Công nợ...</h4>
-                    </div>
-                    <h3>2. Xem báo cáo Tháng (Tính năng mới)</h3>
-                     <ul>
-                         <li>Chọn tab <strong>"📅 Tổng hợp theo Tháng"</strong>.</li>
-                         <li>Chọn tháng/năm cần xem và nhấn nút <strong>"Xem dữ liệu"</strong>.</li>
-                         <li><strong>Chức năng:</strong> Liệt kê tất cả các khoản nợ có hạn trả trong tháng đó (bất kể đã quá hạn hay chưa).</li>
-                         <li><strong>Lọc:</strong> Dùng ô chọn để lọc riêng Thuốc hoặc Không phải thuốc.</li>
-                         <li><strong>Mã ĐH:</strong> Cột Mã ĐH được hiển thị cạnh Mã HD để đối chiếu.</li>
-                    </ul>
-                    <h3>3. LƯU DỮ LIỆU LÊN CLOUD</h3>
-                     <ul>
-                        <li>Nhấn nút **LƯU & PHÂN TÍCH CÔNG NỢ** để lưu và xử lý dữ liệu cùng lúc.</li>
+                    <h3>Cơ chế Realtime Hoàn chỉnh</h3>
+                    <p>Ứng dụng hiện tại đã đồng bộ <strong>TOÀN BỘ DỮ LIỆU</strong> lên Cloud:</p>
+                    <ul>
+                        <li>Dữ liệu thô (Đơn hàng, Công nợ) sẽ được lưu lên Cloud khi bạn nhấn "Lưu dữ liệu lên Cloud".</li>
+                        <li>Các máy khác chỉ cần mở ứng dụng là sẽ tự động tải dữ liệu này về (không cần chọn lại file Excel).</li>
+                        <li>Tab "Tổng hợp theo Tháng" sẽ hoạt động trên mọi máy tính.</li>
                     </ul>
                 </div>
             </div>
@@ -750,21 +224,13 @@
             <div class="schedule-popup-body">
                 <div class="schedule-section">
                     <h3>💊 CÔNG NỢ THUỐC</h3>
-                    <div class="summary-info" id="drugs-summary">
-                        Đang tải dữ liệu...
-                    </div>
-                    <div class="schedule-table-container">
-                        <div id="schedule-drugs-table"></div>
-                    </div>
+                    <div class="summary-info" id="drugs-summary">Đang tải dữ liệu...</div>
+                    <div class="schedule-table-container"><div id="schedule-drugs-table"></div></div>
                 </div>
                 <div class="schedule-section">
                     <h3>📦 CÔNG NỢ KHÔNG PHẢI THUỐC</h3>
-                    <div class="summary-info" id="non-drugs-summary">
-                        Đang tải dữ liệu...
-                    </div>
-                    <div class="schedule-table-container">
-                        <div id="schedule-non-drugs-table"></div>
-                    </div>
+                    <div class="summary-info" id="non-drugs-summary">Đang tải dữ liệu...</div>
+                    <div class="schedule-table-container"><div id="schedule-non-drugs-table"></div></div>
                 </div>
             </div>
             <div class="schedule-popup-footer">
@@ -776,17 +242,17 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAT-ddG7Jd1qdwrNlCgfiQ_GyyLoODl5MA",
       authDomain: "notebook-d469b.firebaseapp.com",
-      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com", // ✅ Realtime Database
+      databaseURL: "https://notebook-d469b-default-rtdb.firebaseio.com",
       projectId: "notebook-d469b",
       storageBucket: "notebook-d469b.firebasestorage.app",
       messagingSenderId: "835830453697",
       appId: "1:835830453697:web:ba485de6c981e72fe00b40",
       measurementId: "G-P79X8EXF3G"
     };
-    let rtdb = null; // ✅ DÙNG REALTIME DATABASE
+    let rtdb = null;
     try {
         const app = firebase.initializeApp(firebaseConfig);
-        rtdb = firebase.database(); // ✅ KHỞI TẠO RTDB
+        rtdb = firebase.database();
         console.log('Firebase Realtime Database initialized successfully');
     } catch (error) {
         console.error('Firebase RTDB initialization error:', error);
@@ -795,14 +261,11 @@
     let debtData = null;
     let overdueDrugs = [];
     let overdueNonDrugs = [];
-    let monthlyDebts = []; // Dữ liệu cho tab tháng
+    let monthlyDebts = [];
 
     const autoPopupConfig = {
         targetWeekdays: [0, 1, 2, 3, 4, 5, 6], 
-        openTimes: [
-            {hour: 13, minute: 15}, 
-            {hour: 16, minute: 30}
-        ],
+        openTimes: [{hour: 13, minute: 15}, {hour: 16, minute: 30}],
     };
     let popupCheckInterval = null; 
     const invoiceIndex = 3;
@@ -829,14 +292,11 @@
         const readConfirmBtn = document.getElementById('read-confirm-btn');
         const exportDrugsBtn = document.getElementById('export-drugs');
         const exportNonDrugsBtn = document.getElementById('export-non-drugs');
-
-        // Elements cho tab tháng
         const monthPicker = document.getElementById('month-picker');
         const filterMonthBtn = document.getElementById('filter-month-btn');
         const typeFilter = document.getElementById('type-filter');
         const exportMonthBtn = document.getElementById('export-month');
         
-        // Set tháng mặc định
         const now = new Date();
         const monthStr = now.toISOString().slice(0, 7); 
         monthPicker.value = monthStr;
@@ -852,17 +312,17 @@
             if (file) readExcelFile(file, 'debt');
         });
 
-        // ✅ NÚT LƯU CLOUD — DÙNG RTDB
         saveCloudBtn.addEventListener('click', async function() {
-            if (overdueDrugs.length === 0 && overdueNonDrugs.length === 0) {
-                showStatus('Không có công nợ để lưu lên Cloud.', 'info');
+            // Sửa lỗi: Cho phép lưu kể cả khi không có nợ quá hạn (để lưu file gốc)
+            if (!orderData && !debtData) {
+                showStatus('Chưa có dữ liệu gốc (File Excel) để lưu.', 'info');
                 return;
             }
-            this.textContent = 'Đang lưu...';
+            this.textContent = 'Đang lưu toàn bộ dữ liệu...';
             this.disabled = true;
             try {
                 await saveDataToRTDB(true);
-                showStatus('✅ Đã lưu kết quả lên Realtime Database!', 'success');
+                showStatus('✅ Đã lưu TOÀN BỘ dữ liệu (gốc + kết quả) lên Cloud!', 'success');
             } finally {
                 this.textContent = '💾 LƯU DỮ LIỆU LÊN CLOUD (FIREBASE)';
                 this.disabled = false;
@@ -878,9 +338,7 @@
             try {
                 await saveDataToRTDB(true);
                 const total = overdueDrugs.length + overdueNonDrugs.length;
-                showStatus(total === 0 
-                    ? 'Phân tích hoàn tất. Không có công nợ quá hạn.' 
-                    : `✅ Đã lưu ${total} công nợ lên Cloud!`, 'success');
+                showStatus(`✅ Phân tích và lưu xong. Tổng: ${total} mục quá hạn.`, 'success');
             } catch (error) {
                 console.error('Lỗi lưu sau phân tích:', error);
                 showStatus('⚠️ Phân tích thành công nhưng lưu Cloud thất bại.', 'error');
@@ -897,10 +355,9 @@
             });
         });
         
-        // --- XỬ LÝ LOGIC TAB THÁNG ---
         filterMonthBtn.addEventListener('click', function() {
             if (!orderData || !debtData) {
-                showStatus('Vui lòng tải file dữ liệu lên trước hoặc chờ dữ liệu từ Cloud.', 'error');
+                showStatus('Đang tải dữ liệu từ Cloud hoặc chưa có dữ liệu...', 'warning');
                 return;
             }
             const selectedMonth = monthPicker.value;
@@ -922,7 +379,6 @@
             }
             exportMonthlyToExcel();
         });
-        // ------------------------------
 
         helpBtn.addEventListener('click', () => helpPopup.style.display = 'flex');
         closePopup.addEventListener('click', () => helpPopup.style.display = 'none');
@@ -943,25 +399,32 @@
         async function initializeApp() {
             try {
                 if (rtdb) {
-                    // SETUP LISTENER REALTIME
                     const dataRef = rtdb.ref('appData/currentData');
                     dataRef.on('value', (snapshot) => {
                         if (snapshot.exists()) {
                             const data = snapshot.val();
+                            
+                            // QUAN TRỌNG: Tải cả dữ liệu gốc để Tab Tháng hoạt động trên máy khác
+                            if (data.orderData) orderData = data.orderData;
+                            if (data.debtData) debtData = data.debtData;
+                            
                             overdueDrugs = data.overdueDrugs || [];
                             overdueNonDrugs = data.overdueNonDrugs || [];
-                            // orderData & debtData không lưu trên cloud để tiết kiệm, user phải load file hoặc lưu local
-                            // Nếu muốn lưu orderData/debtData lên cloud thì phải sửa hàm save, nhưng file gốc chỉ lưu overdue arrays
-                            // Tuy nhiên để phân tích tháng, ta cần orderData/debtData. 
-                            // Nếu user đã load file ở phiên làm việc này, biến toàn cục orderData đã có.
-                            // Nếu user F5, ta load từ LocalStorage.
                             
+                            // Cập nhật trạng thái file để người dùng biết đã có dữ liệu
+                            if (orderData) updateFileStatus('order-file-status', 'Đã đồng bộ từ Cloud', true);
+                            if (debtData) updateFileStatus('debt-file-status', 'Đã đồng bộ từ Cloud', true);
+
+                            // Hiển thị kết quả nếu có
+                            if (orderData || debtData) {
+                                resultsContainer.style.display = 'block';
+                            }
                             displayResults(overdueDrugs, overdueNonDrugs);
+                            
+                            // Lưu lại cache local
+                            localStorage.setItem('congno_data', JSON.stringify(data));
                         }
                     });
-                    
-                    // Load local storage fallback
-                    loadFromLocalStorage();
                     showStatus('Đã kết nối Realtime Database.', 'success');
                 } else {
                     loadFromLocalStorage();
@@ -978,45 +441,42 @@
             const savedData = localStorage.getItem('congno_data');
             if (savedData) {
                 const data = JSON.parse(savedData);
-                if(!orderData) orderData = data.orderData; // Chỉ load nếu chưa có (ưu tiên file mới upload)
-                if(!debtData) debtData = data.debtData;
-                if(overdueDrugs.length === 0) overdueDrugs = data.overdueDrugs || [];
-                if(overdueNonDrugs.length === 0) overdueNonDrugs = data.overdueNonDrugs || [];
+                orderData = data.orderData || null;
+                debtData = data.debtData || null;
+                overdueDrugs = data.overdueDrugs || [];
+                overdueNonDrugs = data.overdueNonDrugs || [];
                 
-                if (orderData) updateFileStatus('order-file-status', 'Dữ liệu từ Local/Cache', true);
-                if (debtData) updateFileStatus('debt-file-status', 'Dữ liệu từ Local/Cache', true);
+                if (orderData) updateFileStatus('order-file-status', 'Dữ liệu từ Local', true);
+                if (debtData) updateFileStatus('debt-file-status', 'Dữ liệu từ Local', true);
+                
+                if(orderData || debtData) resultsContainer.style.display = 'block';
                 displayResults(overdueDrugs, overdueNonDrugs);
             }
         }
 
-        // ✅ HÀM LƯU DỮ LIỆU LÊN REALTIME DATABASE
         async function saveDataToRTDB(forceCloudSave = false) {
-            // Luôn lưu vào Local Storage (bao gồm cả dữ liệu thô để phân tích lại)
-            localStorage.setItem('congno_data', JSON.stringify({
+            // SỬA ĐỔI: Lưu cả orderData và debtData lên Cloud
+            const dataToSave = {
                 orderData: orderData,
                 debtData: debtData,
                 overdueDrugs: overdueDrugs,
                 overdueNonDrugs: overdueNonDrugs,
-                lastUpdated: new Date().toISOString()
-            }));
+                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            // Lưu local cache
+            localStorage.setItem('congno_data', JSON.stringify(dataToSave));
 
             if (rtdb && forceCloudSave) {
-                await rtdb.ref('appData/currentData').set({
-                    overdueDrugs: overdueDrugs,
-                    overdueNonDrugs: overdueNonDrugs,
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
+                await rtdb.ref('appData/currentData').set(dataToSave);
             }
         }
 
         async function deleteAllData() {
             try {
                 if (rtdb) await rtdb.ref('appData/currentData').remove();
-                overdueDrugs = [];
-                overdueNonDrugs = [];
-                // Không xóa orderData/debtData local để user không phải upload lại file nếu lỡ tay
+                orderData = null; debtData = null; overdueDrugs = []; overdueNonDrugs = [];
                 localStorage.removeItem('congno_data');
-                
                 document.getElementById('order-file-status').innerHTML = '';
                 document.getElementById('debt-file-status').innerHTML = '';
                 resultsContainer.style.display = 'none';
@@ -1042,14 +502,7 @@
                         debtData = jsonData;
                         updateFileStatus('debt-file-status', file.name, true);
                     }
-                    // Lưu local ngay khi đọc file
-                    localStorage.setItem('congno_data', JSON.stringify({
-                        orderData: orderData,
-                        debtData: debtData,
-                        overdueDrugs: overdueDrugs,
-                        overdueNonDrugs: overdueNonDrugs
-                    }));
-                    showStatus('File đã được tải lên (Lưu Local).', 'info');
+                    showStatus('File đã tải (Lưu Local). Nhấn "LƯU LÊN CLOUD" để đồng bộ.', 'info');
                 } catch (error) {
                     showStatus('Lỗi đọc file: ' + error.message, 'error');
                 }
@@ -1057,14 +510,11 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // === LOGIC PHÂN TÍCH THÁNG (MỚI) ===
         function analyzeMonthlyDebts(selectedMonthStr) {
             const [yearStr, monthStr] = selectedMonthStr.split('-');
             const targetYear = parseInt(yearStr);
             const targetMonth = parseInt(monthStr) - 1; 
-
             monthlyDebts = []; 
-
             if (!orderData || !debtData) return;
 
             const orderHeaders = orderData[0];
@@ -1085,7 +535,6 @@
 
                 if (!paymentDueDate || isNaN(paymentDueDate.getTime())) continue;
 
-                // Logic: Kiểm tra xem hạn thanh toán có nằm trong tháng đã chọn không
                 if (paymentDueDate.getFullYear() === targetYear && paymentDueDate.getMonth() === targetMonth) {
                     const invoice = debtRow[invoiceIndex];
                     const orderCode = connectionMap.get(invoice);
@@ -1109,7 +558,7 @@
 
                     monthlyDebts.push({
                         invoice: invoice,
-                        orderCode: orderCode, // Mã ĐH
+                        orderCode: orderCode,
                         customerName: customerName,
                         paymentDue: formatDate(paymentDueDate),
                         debtAmount: debtAmount,
@@ -1127,15 +576,9 @@
         function filterAndDisplayMonthlyData() {
             const filterType = document.getElementById('type-filter').value;
             let filteredData = [];
-
-            if (filterType === 'all') {
-                filteredData = monthlyDebts;
-            } else if (filterType === 'drug') {
-                filteredData = monthlyDebts.filter(item => item.isDrug);
-            } else if (filterType === 'nondrug') {
-                filteredData = monthlyDebts.filter(item => !item.isDrug);
-            }
-
+            if (filterType === 'all') filteredData = monthlyDebts;
+            else if (filterType === 'drug') filteredData = monthlyDebts.filter(item => item.isDrug);
+            else if (filterType === 'nondrug') filteredData = monthlyDebts.filter(item => !item.isDrug);
             displayMonthlyTable(filteredData);
         }
 
@@ -1156,49 +599,13 @@
                 if (!isNaN(val)) totalAmount += val;
             });
 
-            summaryDiv.innerHTML = `
-                <span>Số lượng: ${dataToDisplay.length}</span> | 
-                <span>Tổng giá trị: <span style="color: #c0392b; font-size: 1.2em;">${new Intl.NumberFormat('vi-VN').format(totalAmount)} VNĐ</span></span>
-            `;
-
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Ngày thanh toán</th>
-                            <th>Mã ĐH (DH)</th>
-                            <th>Mã Hóa Đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Loại</th>
-                            <th>Số tiền</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
+            summaryDiv.innerHTML = `<span>Số lượng: ${dataToDisplay.length}</span> | <span>Tổng giá trị: <span style="color: #c0392b; font-size: 1.2em;">${new Intl.NumberFormat('vi-VN').format(totalAmount)} VNĐ</span></span>`;
+            let html = `<table><thead><tr><th>STT</th><th>Ngày thanh toán</th><th>Mã ĐH (DH)</th><th>Mã Hóa Đơn</th><th>Khách hàng</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th></tr></thead><tbody>`;
             dataToDisplay.forEach((item, index) => {
-                const typeBadge = item.isDrug 
-                    ? '<span class="badge-drug">Thuốc</span>' 
-                    : '<span class="badge-nondrug">Khác</span>';
-                
+                const typeBadge = item.isDrug ? '<span class="badge-drug">Thuốc</span>' : '<span class="badge-nondrug">Khác</span>';
                 const statusColor = item.status === "Quá hạn" ? "red" : "green";
-
-                html += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${item.paymentDue}</td>
-                        <td class="dh-code">${item.orderCode || ''}</td>
-                        <td><strong>${item.invoice || ''}</strong></td>
-                        <td>${item.customerName}</td>
-                        <td style="text-align: center;">${typeBadge}</td>
-                        <td style="text-align: right; font-weight: bold;">${item.formattedAmount}</td>
-                        <td style="color: ${statusColor}; font-weight: bold;">${item.status}</td>
-                    </tr>
-                `;
+                html += `<tr><td>${index + 1}</td><td>${item.paymentDue}</td><td class="dh-code">${item.orderCode || ''}</td><td><strong>${item.invoice || ''}</strong></td><td>${item.customerName}</td><td style="text-align: center;">${typeBadge}</td><td style="text-align: right; font-weight: bold;">${item.formattedAmount}</td><td style="color: ${statusColor}; font-weight: bold;">${item.status}</td></tr>`;
             });
-
             html += `</tbody></table>`;
             container.innerHTML = html;
         }
@@ -1206,47 +613,23 @@
         function exportMonthlyToExcel() {
             const filterType = document.getElementById('type-filter').value;
             let dataToExport = [];
-             if (filterType === 'all') {
-                dataToExport = monthlyDebts;
-            } else if (filterType === 'drug') {
-                dataToExport = monthlyDebts.filter(item => item.isDrug);
-            } else if (filterType === 'nondrug') {
-                dataToExport = monthlyDebts.filter(item => !item.isDrug);
-            }
+             if (filterType === 'all') dataToExport = monthlyDebts;
+            else if (filterType === 'drug') dataToExport = monthlyDebts.filter(item => item.isDrug);
+            else if (filterType === 'nondrug') dataToExport = monthlyDebts.filter(item => !item.isDrug);
 
             const monthVal = document.getElementById('month-picker').value;
-            const excelData = [
-                ['BÁO CÁO CÔNG NỢ THÁNG ' + monthVal + (filterType === 'drug' ? ' (THUỐC)' : (filterType === 'nondrug' ? ' (KHÔNG PHẢI THUỐC)' : ' (TỔNG HỢP)'))],
-                ['STT', 'Ngày thanh toán', 'Mã ĐH', 'Mã Hóa Đơn', 'Khách hàng', 'Loại hàng', 'Số tiền', 'Trạng thái']
-            ];
-
+            const excelData = [['BÁO CÁO CÔNG NỢ THÁNG ' + monthVal + (filterType === 'drug' ? ' (THUỐC)' : (filterType === 'nondrug' ? ' (KHÔNG PHẢI THUỐC)' : ' (TỔNG HỢP)'))], ['STT', 'Ngày thanh toán', 'Mã ĐH', 'Mã Hóa Đơn', 'Khách hàng', 'Loại hàng', 'Số tiền', 'Trạng thái']];
             dataToExport.forEach((item, index) => {
-                excelData.push([
-                    index + 1,
-                    item.paymentDue,
-                    item.orderCode,
-                    item.invoice,
-                    item.customerName,
-                    item.isDrug ? 'Thuốc' : 'Khác',
-                    item.debtAmount, 
-                    item.status
-                ]);
+                excelData.push([index + 1, item.paymentDue, item.orderCode, item.invoice, item.customerName, item.isDrug ? 'Thuốc' : 'Khác', item.debtAmount, item.status]);
             });
-
             const ws = XLSX.utils.aoa_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Thang_' + monthVal);
             XLSX.writeFile(wb, `BaoCao_CongNo_${filterType}_${monthVal}.xlsx`);
         }
 
-        // === GIỮ NGUYÊN CÁC HÀM CÒN LẠI TỪ FILE GỐC ===
         function updateFileStatus(elementId, fileName, isUploaded) {
-            document.getElementById(elementId).innerHTML = `
-                <div style="margin-top:10px;">
-                    <strong>File:</strong> ${fileName}
-                    <span class="file-status ${isUploaded ? 'uploaded' : 'pending'}">${isUploaded ? 'Đã tải' : 'Đang chờ'}</span>
-                </div>
-            `;
+            document.getElementById(elementId).innerHTML = `<div style="margin-top:10px;"><strong>File:</strong> ${fileName} <span class="file-status ${isUploaded ? 'uploaded' : 'pending'}">${isUploaded ? 'Đã tải' : 'Đang chờ'}</span></div>`;
         }
         function showStatus(message, type) {
             const el = document.getElementById('status-message');
@@ -1302,18 +685,7 @@
             data.forEach((item, i) => {
                 const status = item.isPaid ? '✅ ĐÃ THANH TOÁN' : '❌ CHƯA THANH TOÁN';
                 const color = item.isPaid ? '#27ae60' : '#e74c3c';
-                html += `<tr class="${item.isPaid ? 'paid-row' : ''}">
-                    <td>${i+1}</td>
-                    <td>${item.invoice || 'N/A'}</td>
-                    <td>${item.orderCode || 'N/A'}</td>
-                    <td>${item.customerName || 'N/A'}</td>
-                    <td>${item.paymentDue || 'N/A'}</td>
-                    <td style="text-align:right;font-weight:bold;">${item.debtAmount || '0'}</td>
-                    <td style="text-align:center;">
-                        <span style="background:${item.daysOverdue>30?'#e74c3c':item.daysOverdue>15?'#f39c12':'#f1c40f'};color:white;padding:2px 8px;border-radius:10px;font-weight:bold;">${item.daysOverdue || '0'} ngày</span>
-                    </td>
-                    <td><span style="color:${color};font-weight:bold;">${status}</span></td>
-                </tr>`;
+                html += `<tr class="${item.isPaid ? 'paid-row' : ''}"><td>${i+1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td style="text-align:right;font-weight:bold;">${item.debtAmount || '0'}</td><td style="text-align:center;"><span style="background:${item.daysOverdue>30?'#e74c3c':item.daysOverdue>15?'#f39c12':'#f1c40f'};color:white;padding:2px 8px;border-radius:10px;font-weight:bold;">${item.daysOverdue || '0'} ngày</span></td><td><span style="color:${color};font-weight:bold;">${status}</span></td></tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
@@ -1515,32 +887,31 @@
             XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
             showStatus(`Đã xuất file ${fileName}.xlsx`, 'success');
         }
-    });
 
-    // === HÀM TOÀN CỤC ===
-    window.togglePaidStatus = function(id, isPaid, type) {
-        const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
-        const item = arr.find(i => i.id === id);
-        if (item) {
-            item.isPaid = isPaid;
-            const row = document.getElementById(`row-${id}`);
-            if (row) {
-                row.classList.toggle('paid-row', isPaid);
-                row.classList.toggle('overdue', !isPaid);
+        window.togglePaidStatus = function(id, isPaid, type) {
+            const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
+            const item = arr.find(i => i.id === id);
+            if (item) {
+                item.isPaid = isPaid;
+                const row = document.getElementById(`row-${id}`);
+                if (row) {
+                    row.classList.toggle('paid-row', isPaid);
+                    row.classList.toggle('overdue', !isPaid);
+                }
+                saveDataToRTDB(true);
             }
-            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
-        }
-    };
-    window.updateRow = function(id, type) {
-        const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
-        const index = arr.findIndex(i => i.id === id);
-        if (index !== -1) {
-            arr.splice(index, 1);
-            saveDataToRTDB(true); // ✅ Tự động lưu qua RTDB
-            const row = document.getElementById(`row-${id}`);
-            if (row) row.remove();
-        }
-    };
+        };
+        window.updateRow = function(id, type) {
+            const arr = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
+            const index = arr.findIndex(i => i.id === id);
+            if (index !== -1) {
+                arr.splice(index, 1);
+                saveDataToRTDB(true); 
+                const row = document.getElementById(`row-${id}`);
+                if (row) row.remove();
+            }
+        };
+    });
    </script>
 </body>
 </html>

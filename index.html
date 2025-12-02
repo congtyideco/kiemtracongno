@@ -863,7 +863,7 @@
     </div>
 
    <script>
-    // Firebase configuration
+    // Firebase configuration (GIỮ NGUYÊN CẤU HÌNH GỐC)
     const firebaseConfig = {
       apiKey: "AIzaSyB2Y6FHuD2U0r6CM1awIee8sOmUgjq57Ck",
       authDomain: "game-162fc.firebaseapp.com",
@@ -901,7 +901,6 @@
     const invoiceIndex = 3;
     const debtAmountDebtIndex = 5;
     const paymentDueDebtIndex = 6;
-    // const notesOrderIndex = 16; // Giữ nguyên, sẽ dùng header.indexOf('Ghi chú')
 
     document.addEventListener('DOMContentLoaded', function() {
         const fileOrderInput = document.getElementById('file-order');
@@ -1182,7 +1181,7 @@
             filterAndDisplayMonthlyData();
         }
 
-        // HÀM LỌC DỮ LIỆU VÀ HIỂN THỊ (MỚI)
+        // HÀM LỌC DỮ LIỆU VÀ HIỂN THỊ (GỐC)
         function filterAndDisplayMonthlyData() {
             const filterType = document.getElementById('type-filter').value;
             let filteredData = [];
@@ -1306,7 +1305,6 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    // Đọc tất cả các hàng, bao gồm tiêu đề
                     const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
                     
                     if (type === 'order') { orderData = jsonData; updateFileStatus('order-file-status', file.name, true); }
@@ -1342,7 +1340,9 @@
                 const paymentDueOrderIndex = orderHeaders.indexOf('Hạn thanh toán');
                 const isDrugIndex = orderHeaders.indexOf('Thuốc?');
                 const debtAmountOrderIndex = orderHeaders.indexOf('Số tiền nợ');
-                const notesOrderIndex = orderHeaders.indexOf('Ghi chú'); // THÊM: Chỉ mục cột Ghi chú
+                
+                // THAY ĐỔI: Tìm chỉ mục cột Ghi chú
+                const notesOrderIndex = orderHeaders.indexOf('Ghi chú'); // Giả định tiêu đề là 'Ghi chú'
                 
                 const connectionMap = createConnectionMap(orderData, debtData, paymentDueOrderIndex, orderCodeIndex);
                 
@@ -1370,7 +1370,7 @@
                                     paymentDue: formatDate(paymentDueDate),
                                     originalDebtAmount: debtRow[debtAmountDebtIndex] || matchingOrder[debtAmountOrderIndex],
                                     debtAmount: formatCurrency(debtRow[debtAmountDebtIndex] || matchingOrder[debtAmountOrderIndex]),
-                                    notes: notesOrderIndex !== -1 ? matchingOrder[notesOrderIndex] : '', // THÊM: Ghi chú
+                                    notes: notesOrderIndex !== -1 ? matchingOrder[notesOrderIndex] : '', // THAY ĐỔI: Thêm Ghi chú
                                     daysOverdue: Math.floor((currentDate - paymentDueDate) / oneDayMs),
                                     isPaid: false,
                                     originalPaymentDue: paymentDueDate.getTime()
@@ -1471,11 +1471,11 @@
             if (data.length === 0) {
                 container.innerHTML = `<p>Không có công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'} nào quá hạn.</p>`; return;
             }
-            // ĐÃ CẬP NHẬT: Thêm cột Ghi chú
+            // ĐÃ THAY ĐỔI: Thêm cột Ghi chú
             let html = `<table><thead><tr><th>STT</th><th>Mã HD</th><th>Mã DH</th><th>Tên khách hàng</th><th>Ngày thanh toán</th><th>Số tiền nợ</th><th>Ghi chú</th><th>Số ngày quá hạn</th><th class="checkbox-cell">Đã thanh toán</th><th>Thao tác</th></tr></thead><tbody>`;
             data.forEach((item, index) => {
                 const rowClass = item.isPaid ? 'paid-row' : 'overdue';
-                // ĐÃ CẬP NHẬT: Thêm item.notes
+                // ĐÃ THAY ĐỔI: Thêm item.notes
                 html += `<tr class="${rowClass}" id="row-${item.id}"><td>${index + 1}</td><td>${item.invoice || 'N/A'}</td><td>${item.orderCode || 'N/A'}</td><td>${item.customerName || 'N/A'}</td><td>${item.paymentDue || 'N/A'}</td><td>${item.debtAmount || 'N/A'}</td><td>${item.notes || ''}</td><td>${item.daysOverdue || 'N/A'}</td><td class="checkbox-cell"><input type="checkbox" ${item.isPaid ? 'checked' : ''} onchange="togglePaidStatus('${item.id}', this.checked, '${type}')"></td><td><button class="update-btn" onclick="updateRow('${item.id}', '${type}')">Cập nhật</button></td></tr>`;
             });
             html += `</tbody></table><p><strong>Tổng số: ${data.length} công nợ ${type === 'drugs' ? 'thuốc' : 'không phải thuốc'}</strong></p>`;
@@ -1497,7 +1497,7 @@
         function exportToExcel(type, fileName) {
             const data = type === 'drugs' ? overdueDrugs : overdueNonDrugs;
             if (data.length === 0) { showStatus('Không có dữ liệu để xuất file Excel.', 'error'); return; }
-            // ĐÃ CẬP NHẬT: Thêm cột Ghi chú
+            // ĐÃ THAY ĐỔI: Thêm cột Ghi chú vào tiêu đề và dữ liệu
             const excelData = [['STT', 'Mã HD', 'Mã DH', 'Tên khách hàng', 'Ngày thanh toán', 'Số tiền nợ', 'Ghi chú', 'Số ngày quá hạn', 'Trạng thái']];
             data.forEach((item, index) => excelData.push([
                 index + 1, 
